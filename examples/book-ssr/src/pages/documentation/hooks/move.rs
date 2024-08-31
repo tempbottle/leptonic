@@ -7,8 +7,8 @@ use leptonic::contexts::global_pointer_event::{
 use leptonic::hooks::*;
 use leptos::*;
 use leptos_use::use_element_bounding;
-use ringbuf::{HeapRb, Rb};
-
+use ringbuf::{HeapRb};
+use ringbuf::traits::{Consumer, RingBuffer};
 use crate::pages::documentation::article::Article;
 use crate::pages::documentation::toc::Toc;
 
@@ -138,7 +138,7 @@ pub fn PageUseMove() -> impl IntoView {
                 </div>
             </div>
 
-            <P>"Last " { move || events.with(|events| events.len()) } " events: "</P>
+            <P>"Last " { move || events.with(|events| events.iter().count()) } " events: "</P>
 
             <pre style="
                 width: 100%;

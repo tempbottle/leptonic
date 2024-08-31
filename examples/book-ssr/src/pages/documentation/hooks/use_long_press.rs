@@ -5,8 +5,8 @@ use leptonic::atoms::link::AnchorLink;
 use leptonic::components::prelude::*;
 use leptonic::hooks::*;
 use leptos::*;
-use ringbuf::{HeapRb, Rb};
-
+use ringbuf::{HeapRb};
+use ringbuf::traits::{Consumer, RingBuffer};
 use crate::pages::documentation::article::Article;
 use crate::pages::documentation::toc::Toc;
 
@@ -83,7 +83,7 @@ pub fn PageUseLongPress() -> impl IntoView {
                 _ => " times",
             } }</P>
 
-            <P>"Last " { move || events.with(|events| events.len()) } " events: "</P>
+            <P>"Last " { move || events.with(|events| events.iter().count()) } " events: "</P>
 
             <pre style="
                 width: 100%;
