@@ -1,0 +1,8 @@
+serve:
+    cargo leptos serve;
+
+r:
+    cargo leptos build --release;
+
+d:
+    cargo leptos build;
