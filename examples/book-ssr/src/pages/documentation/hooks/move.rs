@@ -1,14 +1,15 @@
-use indoc::indoc;
 use leptonic::atoms::link::AnchorLink;
 use leptonic::components::prelude::*;
 use leptonic::contexts::global_pointer_event::{
-    GlobalPointerMoveEvent, GlobalPointerUpEvent,
+    GlobalPointerCancelEvent, GlobalPointerDownEvent, GlobalPointerMoveEvent, GlobalPointerUpEvent,
 };
 use leptonic::hooks::*;
-use leptos::*;
+use leptos::html;
+use leptos::prelude::*;
 use leptos_use::use_element_bounding;
-use ringbuf::{HeapRb};
-use ringbuf::traits::{Consumer, RingBuffer};
+use ringbuf::traits::{Consumer, Observer, RingBuffer};
+use ringbuf::HeapRb;
+
 use crate::pages::documentation::article::Article;
 use crate::pages::documentation::toc::Toc;
 
@@ -21,61 +22,63 @@ pub enum Event {
 
 #[component]
 pub fn PageUseMove() -> impl IntoView {
-    let (events, set_events) = create_signal(HeapRb::<Oco<'static, str>>::new(50));
-    let (left, set_left) = create_signal(0.0);
-    let (top, set_top) = create_signal(0.0);
+    let (events, set_events) = signal(HeapRb::<Oco<'static, str>>::new(50));
+    let (left, set_left) = signal(0.0);
+    let (top, set_top) = signal(0.0);
 
     let global_pointer_up = expect_context::<GlobalPointerUpEvent>().read_signal;
+    let global_pointer_down = expect_context::<GlobalPointerDownEvent>().read_signal;
+    let global_pointer_cancel = expect_context::<GlobalPointerCancelEvent>().read_signal;
     let global_pointer_move = expect_context::<GlobalPointerMoveEvent>().read_signal;
 
-    let container: NodeRef<html::Div> = create_node_ref();
+    let container: NodeRef<html::Div> = NodeRef::new();
     let container_bounding = use_element_bounding(container);
 
-    let draggable: NodeRef<html::Div> = create_node_ref();
+    let draggable: NodeRef<html::Div> = NodeRef::new();
     let draggable_bounding = use_element_bounding(draggable);
 
-    let mov: UseMoveReturn = use_move(
-        UseMoveInput::builder()
-            .on_move_start(move |_e| {
-                set_events.update(move |events| {
-                    events.push_overwrite(Oco::Borrowed("MoveStart"));
-                });
-            })
-            .on_move(move |e: MoveEvent| {
-                set_left.update(move |l| *l += e.delta_x);
-                set_top.update(move |l| *l += e.delta_y);
-                set_events.update(move |events| {
-                    events.push_overwrite(Oco::Owned(format!(
-                        "Move {{ dx: {}, dy: {} }}",
-                        e.delta_x, e.delta_y
-                    )));
-                });
-            })
-            .on_move_end(move |_e| {
-                set_left.update(move |l| {
-                    *l = (*l).clamp(
-                        0.0,
-                        container_bounding.width.get_untracked()
-                            - draggable_bounding.width.get_untracked(),
-                    )
-                });
-                set_top.update(move |t| {
-                    *t = (*t).clamp(
-                        0.0,
-                        container_bounding.height.get_untracked()
-                            - draggable_bounding.height.get_untracked(),
-                    )
-                });
-                set_events.update(move |events| {
-                    events.push_overwrite(Oco::Borrowed("MoveEnd"));
-                });
-            })
-            .global_pointer_up(global_pointer_up)
-            .global_pointer_move(global_pointer_move)
-            .build(),
-    );
+    let UseMoveReturn { attrs } = use_move(UseMoveInput {
+        on_move_start: Callback::new(move |_e| {
+            set_events.update(move |events| {
+                events.push_overwrite(Oco::Borrowed("MoveStart"));
+            });
+        }),
+        on_move: Callback::new(move |e: MoveEvent| {
+            set_left.update(move |l| *l += e.delta_x);
+            set_top.update(move |l| *l += e.delta_y);
+            set_events.update(move |events| {
+                events.push_overwrite(Oco::Owned(format!(
+                    "Move {{ dx: {}, dy: {} }}",
+                    e.delta_x, e.delta_y
+                )));
+            });
+        }),
+        on_move_end: Callback::new(move |_e| {
+            set_left.update(move |l| {
+                *l = (*l).clamp(
+                    0.0,
+                    container_bounding.width.get_untracked()
+                        - draggable_bounding.width.get_untracked(),
+                )
+            });
+            set_top.update(move |t| {
+                *t = (*t).clamp(
+                    0.0,
+                    container_bounding.height.get_untracked()
+                        - draggable_bounding.height.get_untracked(),
+                )
+            });
+            set_events.update(move |events| {
+                events.push_overwrite(Oco::Borrowed("MoveEnd"));
+            });
+        }),
+        global_pointer_up: global_pointer_up.into(),
+        global_pointer_down: global_pointer_down.into(),
+        global_pointer_cancel: global_pointer_cancel.into(),
+        global_pointer_move: global_pointer_move.into(),
+    });
 
-    let string = create_memo(move |_| {
+    let string = Memo::new(move |_| {
         events.with(|events| {
             let mut result = String::new();
             for e in events.iter().rev() {
@@ -88,17 +91,15 @@ pub fn PageUseMove() -> impl IntoView {
 
     view! {
         <Article>
-            <H1 id="use_move" class="anchor">
+            <h1 id="use_move" class="anchor">
                 "use_move"
                 <AnchorLink href="#use_move" description="Direct link to article header"/>
-            </H1>
+            </h1>
 
-            <P>"Track movement."</P>
+            <p>"Track movement."</p>
 
             <Code>
-                {indoc!(r"
-                    ...
-                ")}
+                "..."
             </Code>
 
             // The `touch-action: none` is important. Browsers would otherwise interrupt touchmove events after a small delay!
@@ -112,8 +113,7 @@ pub fn PageUseMove() -> impl IntoView {
                 color: var(--typography-code-color);
             ">
                 <div
-                    {..mov.props.attrs}
-                    {..mov.props.handlers}
+                    {..attrs}
                     node_ref=draggable
                     style=move || format!("
                         border: 0.1em solid green;
@@ -138,7 +138,7 @@ pub fn PageUseMove() -> impl IntoView {
                 </div>
             </div>
 
-            <P>"Last " { move || events.with(|events| events.iter().count()) } " events: "</P>
+            <p>"Last " { move || events.with(|events| events.occupied_len()) } " events: "</p>
 
             <pre style="
                 width: 100%;

@@ -1,90 +1,72 @@
-use leptos::*;
+use leptos::prelude::*;
 use web_sys::PointerEvent;
 
-use super::WasmClosure;
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct GlobalPointerUpEvent {
-    _closure: WasmClosure<PointerEvent>,
-    pub read_signal: ReadSignal<Option<PointerEvent>>,
-    pub write_signal: WriteSignal<Option<PointerEvent>>,
+    pub read_signal: ReadSignal<Option<PointerEvent>, LocalStorage>,
+    pub write_signal: WriteSignal<Option<PointerEvent>, LocalStorage>,
 }
 
 impl GlobalPointerUpEvent {
-    #[allow(clippy::used_underscore_binding)]
     pub fn new(
-        _closure: WasmClosure<PointerEvent>,
-        read_signal: ReadSignal<Option<PointerEvent>>,
-        write_signal: WriteSignal<Option<PointerEvent>>,
+        read_signal: ReadSignal<Option<PointerEvent>, LocalStorage>,
+        write_signal: WriteSignal<Option<PointerEvent>, LocalStorage>,
     ) -> Self {
         Self {
-            _closure,
             read_signal,
             write_signal,
         }
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct GlobalPointerDownEvent {
-    _closure: WasmClosure<PointerEvent>,
-    pub read_signal: ReadSignal<Option<PointerEvent>>,
-    pub write_signal: WriteSignal<Option<PointerEvent>>,
+    pub read_signal: ReadSignal<Option<PointerEvent>, LocalStorage>,
+    pub write_signal: WriteSignal<Option<PointerEvent>, LocalStorage>,
 }
 
 impl GlobalPointerDownEvent {
-    #[allow(clippy::used_underscore_binding)]
     pub fn new(
-        _closure: WasmClosure<PointerEvent>,
-        read_signal: ReadSignal<Option<PointerEvent>>,
-        write_signal: WriteSignal<Option<PointerEvent>>,
+        read_signal: ReadSignal<Option<PointerEvent>, LocalStorage>,
+        write_signal: WriteSignal<Option<PointerEvent>, LocalStorage>,
     ) -> Self {
         Self {
-            _closure,
             read_signal,
             write_signal,
         }
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct GlobalPointerCancelEvent {
-    _closure: WasmClosure<PointerEvent>,
-    pub read_signal: ReadSignal<Option<PointerEvent>>,
-    pub write_signal: WriteSignal<Option<PointerEvent>>,
+    pub read_signal: ReadSignal<Option<PointerEvent>, LocalStorage>,
+    pub write_signal: WriteSignal<Option<PointerEvent>, LocalStorage>,
 }
 
 impl GlobalPointerCancelEvent {
-    #[allow(clippy::used_underscore_binding)]
     pub fn new(
-        _closure: WasmClosure<PointerEvent>,
-        read_signal: ReadSignal<Option<PointerEvent>>,
-        write_signal: WriteSignal<Option<PointerEvent>>,
+        read_signal: ReadSignal<Option<PointerEvent>, LocalStorage>,
+        write_signal: WriteSignal<Option<PointerEvent>, LocalStorage>,
     ) -> Self {
         Self {
-            _closure,
             read_signal,
             write_signal,
         }
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct GlobalPointerMoveEvent {
-    _closure: WasmClosure<PointerEvent>,
-    pub read_signal: ReadSignal<Option<PointerEvent>>,
-    pub write_signal: WriteSignal<Option<PointerEvent>>,
+    pub read_signal: ReadSignal<Option<PointerEvent>, LocalStorage>,
+    pub write_signal: WriteSignal<Option<PointerEvent>, LocalStorage>,
 }
 
 impl GlobalPointerMoveEvent {
-    #[allow(clippy::used_underscore_binding)]
     pub fn new(
-        _closure: WasmClosure<PointerEvent>,
-        read_signal: ReadSignal<Option<PointerEvent>>,
-        write_signal: WriteSignal<Option<PointerEvent>>,
+        read_signal: ReadSignal<Option<PointerEvent>, LocalStorage>,
+        write_signal: WriteSignal<Option<PointerEvent>, LocalStorage>,
     ) -> Self {
         Self {
-            _closure,
             read_signal,
             write_signal,
         }

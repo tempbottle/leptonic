@@ -1,3 +1,5 @@
+@use "./leptonic/leptonic-themes";
+
 * {
     font-family: Roboto, sans-serif;
 }
@@ -16,10 +18,11 @@ body {
     user-select: none;
 }
 
-@import "./leptonic/leptonic-themes";
-
 [data-theme="light"] {
     color-scheme: light;
+
+    --main-color: var(--std-text-dark);
+    --main-background-color: #efebe8;
 
     --brand-color: #e66956;
 
@@ -38,6 +41,9 @@ body {
 
 [data-theme="dark"] {
     color-scheme: dark;
+
+    --main-color: var(--std-text-bright);
+    --main-background-color: #141414;
 
     --brand-color: #e66956;
 

@@ -1,62 +1,50 @@
-use std::rc::Rc;
-
 use educe::Educe;
-use leptos::{Callback, Oco};
-use leptos_reactive::SignalGet;
-use typed_builder::TypedBuilder;
+use leptos::attr;
+use leptos::attr::{Attr, IntoAttributeValue};
+use leptos::oco::Oco;
+use leptos::prelude::*;
 
 use crate::{
-    hooks::{interactions::use_press::PressResponder, PressEvent},
     prelude::{AriaExpanded, AriaHasPopup},
-    state::overlay::OverlayTriggerState,
-    utils::{
-        aria::{AriaAttribute, AriaControls, GenericAttribute},
-        attributes::Attributes,
-    },
+    utils::aria::AriaControls,
 };
 
-// TODO: This does not support a `disabled` signal. Why?
-#[derive(Debug, Clone, TypedBuilder)]
+#[derive(Debug, Clone)]
 pub struct UseOverlayTriggerInput {
-    #[builder(setter(into))]
-    pub(crate) overlay_id: Oco<'static, str>,
+    /// Whether the overlay is currently shown.
+    pub show: Signal<bool>,
+
+    pub overlay_id: Oco<'static, str>,
 
     /// The type of overlay opened by this trigger.
     /// Using the variants `False` or `True` will result in a runtime warning on debug builds!
     /// Prefer `AriaHasPopup::Menu` if you are unsure what to use otherwise.
-    #[builder(default = AriaHasPopup::Menu, setter(into))]
-    pub(crate) overlay_type: AriaHasPopup,
+    pub overlay_type: AriaHasPopup,
 }
 
 #[derive(Debug)]
 pub struct UseOverlayTriggerReturn {
     /// Props for the trigger.
-    pub props: UseOverlayTriggerProps,
+    pub attrs: UseOverlayTriggerAttrs,
 }
 
-#[derive(Educe)]
-#[educe(Debug)]
-pub struct UseOverlayTriggerProps {
-    /// These attributes must be spread onto the target element: `<foo {..attrs} />`
-    pub attrs: Attributes,
-}
+/// These attributes must be spread onto the target element: `<foo {..attrs} />`
+pub type UseOverlayTriggerAttrs = (
+    Attr<attr::AriaHaspopup, &'static str>,
+    Attr<attr::AriaExpanded, Signal<&'static str>>,
+    Attr<attr::AriaControls, Signal<Option<String>>>,
+);
 
 #[derive(Educe)]
-#[educe(Debug)]
+#[educe(Debug, Clone, Copy)]
 pub struct UseOverlayTriggerOverlayProps {
     /// These attributes must be spread onto the target element: `<foo {..attrs} />`
-    pub attrs: Attributes,
+    pub attrs:UseOverlayTriggerOverlayAttrs,
 }
 
-pub fn use_overlay_trigger(
-    state: OverlayTriggerState,
+pub type UseOverlayTriggerOverlayAttrs = ();
 
-    // If present, adds logic for toggling the overlay on press interactions.
-    // Pass `None` if you want to handle this logic by yourself.
-    press_responder: Option<PressResponder>,
-
-    input: UseOverlayTriggerInput,
-) -> UseOverlayTriggerReturn {
+pub fn use_overlay_trigger(input: UseOverlayTriggerInput) -> UseOverlayTriggerReturn {
     #[cfg(debug_assertions)]
     fn get_overlay_type(input: &UseOverlayTriggerInput) -> AriaHasPopup {
         match input.overlay_type {
@@ -75,29 +63,24 @@ pub fn use_overlay_trigger(
 
     let overlay_id = input.overlay_id;
 
-    let trigger_attrs = Attributes::new()
-        .insert_entry(AriaAttribute::HasPopup(GenericAttribute::Static(
-            aria_has_popup,
-        )))
-        .insert_entry(AriaAttribute::Expanded(GenericAttribute::Fn(Rc::new(
-            move || AriaExpanded::from(state.show.get()),
-        ))))
-        .insert_entry(AriaAttribute::Controls(GenericAttribute::Fn(Rc::new(
-            move || match state.show.get() {
-                true => AriaControls::Id(vec![overlay_id.to_string()]),
-                false => AriaControls::Undefined,
-            },
-        ))));
-
-    if let Some(press_responder) = press_responder {
-        press_responder.add_on_press(Callback::new(move |_e: PressEvent| {
-            state.toggle();
-        }));
-    }
-
     UseOverlayTriggerReturn {
-        props: UseOverlayTriggerProps {
-            attrs: trigger_attrs,
-        },
+        attrs: (
+            Attr(attr::AriaHaspopup, aria_has_popup.into_attribute_value()),
+            Attr(
+                attr::AriaExpanded,
+                Signal::derive(move || {
+                    AriaExpanded::from(input.show.get()).into_attribute_value()
+                })
+            ),
+            Attr(
+                attr::AriaControls,
+                Signal::derive(move ||
+                    match input.show.get() {
+                        true => AriaControls::Id(vec![overlay_id.to_string()]),
+                        false => AriaControls::Undefined,
+                    }.into_attribute_value()
+                )
+            ),
+        ),
     }
 }

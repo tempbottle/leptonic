@@ -1,6 +1,6 @@
 use indoc::indoc;
 use leptonic::{atoms::link::AnchorLink, components::prelude::*};
-use leptos::*;
+use leptos::prelude::*;
 
 use crate::pages::documentation::{article::Article, toc::Toc};
 
@@ -14,7 +14,7 @@ pub struct Minion {
 
 #[component]
 pub fn PageTable() -> impl IntoView {
-    let minions = create_rw_signal(vec![
+    let minions = RwSignal::new(vec![
         Minion {
             id: 1,
             name: String::from("Kevin"),
@@ -43,12 +43,12 @@ pub fn PageTable() -> impl IntoView {
 
     view! {
         <Article>
-            <H1 id="table" class="anchor">
+            <h1 id="table" class="anchor">
                 "Table"
                 <AnchorLink href="#table" description="Direct link to article header"/>
-            </H1>
+            </h1>
 
-            <P>"Tables..."</P>
+            <p>"Tables..."</p>
 
             <Code>
                 {indoc!(r##"
@@ -108,12 +108,12 @@ pub fn PageTable() -> impl IntoView {
                 </Table>
             </TableContainer>
 
-            <H2 id="styling">
+            <h2 id="styling">
                 "Styling"
                 <AnchorLink href="#styling" description="Direct link to section: Styling"/>
-            </H2>
+            </h2>
 
-            <P>"You may overwrite any of the following CSS variables to meet your styling needs."</P>
+            <p>"You may overwrite any of the following CSS variables to meet your styling needs."</p>
 
             <Code>
                 {indoc!(r"

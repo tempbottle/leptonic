@@ -1,11 +1,12 @@
-use crate::pages::documentation::article::Article;
-use crate::pages::documentation::toc::Toc;
 use leptonic::atoms::link::AnchorLink;
 use leptonic::components::prelude::*;
 use leptonic::hooks::*;
 use leptos::prelude::*;
 use ringbuf::traits::{Consumer, Observer, RingBuffer};
 use ringbuf::HeapRb;
+
+use crate::pages::documentation::article::Article;
+use crate::pages::documentation::toc::Toc;
 
 #[derive(Clone)]
 pub enum Event {
@@ -15,8 +16,7 @@ pub enum Event {
 }
 
 #[component]
-pub fn PageUsePress() -> impl IntoView {
-    let (count, set_count) = signal(0);
+pub fn PageUseHover() -> impl IntoView {
     let (events, set_events) = signal(HeapRb::<Oco<'static, str>>::new(50));
     let (disabled, set_disabled) = signal(false);
 
@@ -31,60 +31,48 @@ pub fn PageUsePress() -> impl IntoView {
         })
     });
 
-    let UsePressReturn { attrs, is_pressed } = use_press(UsePressInput {
+    let UseHoverReturn { attrs, is_hovered } = use_hover(UseHoverInput {
         disabled: disabled.into(),
-        force_prevent_default: false,
-        allow_propagation: false,
-        on_press: Callback::new(move |e| {
-            set_count.update(|c| *c += 1);
+        on_hover_start: Some(Callback::new(move |e| {
             set_events.update(|events| {
-                events.push_overwrite(Oco::Owned(format!("Press: {e:?}")));
-            });
-        }),
-        on_press_up: Some(Callback::new(move |e| {
-            set_events.update(|events| {
-                events.push_overwrite(Oco::Owned(format!("PressUp: {e:?}")));
+                events.push_overwrite(Oco::Owned(format!("HoverStart: {e:?}")));
             });
         })),
-        on_press_start: Some(Callback::new(move |e| {
+        on_hover_end: Some(Callback::new(move |e| {
             set_events.update(|events| {
-                events.push_overwrite(Oco::Owned(format!("PressStart: {e:?}")));
-            });
-        })),
-        on_press_end: Some(Callback::new(move |e| {
-            set_events.update(|events| {
-                events.push_overwrite(Oco::Owned(format!("PressEnd: {e:?}")));
+                events.push_overwrite(Oco::Owned(format!("HoverEnd: {e:?}")));
             });
         })),
     });
 
     view! {
         <Article>
-            <h1 id="use_press" class="anchor">
-                "use_press"
-                <AnchorLink href="#use_press" description="Direct link to article header"/>
+            <h1 id="use-hover" class="anchor">
+                "use_hover"
+                <AnchorLink href="#use-hover" description="Direct link to section: use_hover"/>
             </h1>
 
-            <p>"Track element press."</p>
+            <p>"Track element hover."</p>
 
             <Code>
                 "..."
             </Code>
 
-            <button {..attrs}>
-                "Press me"
-            </button>
+            <div
+                {..attrs}
+                style="display: inline-flex;
+                border: 0.1em solid green;
+                padding: 0.5em 1em;"
+            >
+                "Hover me"
+            </div>
 
             <FormControl attr:style="flex-direction: row; align-items: center; gap: 0.5em;">
                 <Checkbox checked=disabled set_checked=set_disabled />
                 <Label>"Disabled"</Label>
             </FormControl>
 
-            <p>"Is pressed: " { move || is_pressed.get() }</p>
-            <p>"Was pressed: " { move || count.get() } { move || match count.get() {
-                1 => " time",
-                _ => " times",
-            } }</p>
+            <p>"Is hovered: " { move || is_hovered.get() }</p>
 
             <p>"Last " { move || events.with(|events| events.occupied_len()) } " events: "</p>
 
@@ -104,7 +92,7 @@ pub fn PageUsePress() -> impl IntoView {
 
         <Toc toc=Toc::List {
             inner: vec![
-                Toc::Leaf { title: "use_press", link: "#use-press" },
+                Toc::Leaf { title: "use_hover", link: "#use-hover" },
             ]
         }/>
     }

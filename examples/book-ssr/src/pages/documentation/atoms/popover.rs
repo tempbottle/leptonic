@@ -3,10 +3,10 @@ use leptonic::atoms::button::Button;
 use leptonic::atoms::hoverable::Hoverable;
 use leptonic::atoms::link::AnchorLink;
 use leptonic::atoms::popover::{Popover, PopoverContent, PopoverContext, PopoverTrigger};
-use leptonic::components::typography::{Code, H1, P};
+use leptonic::components::typography::Code;
 use leptonic::hooks::{PlacementX, PlacementY};
 use leptonic::utils::locale::WritingDirection;
-use leptos::*;
+use leptos::prelude::*;
 
 use crate::pages::documentation::article::Article;
 use crate::pages::documentation::toc::Toc;
@@ -15,12 +15,12 @@ use crate::pages::documentation::toc::Toc;
 pub fn PageAtomPopover() -> impl IntoView {
     view! {
         <Article>
-            <H1 id="popover" class="anchor">
+            <h1 id="popover" class="anchor">
                 "Popover"
                 <AnchorLink href="#popover" description="Direct link to article header"/>
-            </H1>
+            </h1>
 
-            <P>"..."</P>
+            <p>"..."</p>
 
             <Code>
                 {indoc!(r#"

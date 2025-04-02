@@ -1,6 +1,11 @@
-use leptos::*;
+use leptos::prelude::*;
 
-use crate::{hooks::{anchor_link::Href, *}, ScrollBehavior, Transparent};
+use crate::{
+    hooks::{
+        anchor_link::Href, use_anchor_link, UseAnchorLinkInput, UseAnchorLinkReturn, UsePressInput,
+    },
+    ScrollBehavior,
+};
 
 #[component]
 pub fn AnchorLink(
@@ -17,17 +22,16 @@ pub fn AnchorLink(
     #[prop(into, optional)]
     description: Option<Oco<'static, str>>,
 
-    #[prop(into, optional)] id: Option<AttributeValue>,
-    #[prop(into, optional)] class: Option<AttributeValue>,
-    #[prop(into, optional)] style: Option<AttributeValue>,
-
     /// If no children are provided, this component renders a single `#` character.
     #[prop(optional)]
     children: Option<Children>,
 ) -> impl IntoView {
     // We make links "use_press", so that optional PressResponder's higher up the component tree can react on link interactions
     // and so that a custom `on_press` handler can immediately work with the underlying link element.
-    let UseAnchorLinkReturn { props } = use_anchor_link(UseAnchorLinkInput {
+    let UseAnchorLinkReturn {
+        attrs,
+        is_pressed: _,
+    } = use_anchor_link(UseAnchorLinkInput {
         href: Href::from_str(href).expect("valid href"),
         scroll_behavior: scroll_behavior.or(Some(ScrollBehavior::default())),
         disabled: false.into(),
@@ -38,7 +42,8 @@ pub fn AnchorLink(
             // We are using an <a> tag and want the custom scrolling behavior from `use_anchor_link`.
             // If we would not enforce prevention of default behavior, automatic browser scroll-jumps would occur.
             force_prevent_default: true,
-            on_press: None,
+            allow_propagation: false,
+            on_press: Callback::new(move |_| {}),
             on_press_up: None,
             on_press_start: None,
             on_press_end: None,
@@ -46,21 +51,15 @@ pub fn AnchorLink(
     });
 
     view! {
-        <Transparent>
-            <a
-                {..props.attrs}
-                {..props.handlers}
-                id=id
-                class=class
-                style=style
-                class="leptonic-anchor-link"
-                target="_self"
-            >
-                { match children {
-                    Some(children) => children().into_view(),
-                    None => "#".into_view(),
-                } }
-            </a>
-        </Transparent>
+        <a
+            class="leptonic-anchor-link"
+            target="_self"
+            {..attrs}
+        >
+            { match children {
+                Some(children) => children().into_any(),
+                None => "#".into_any(),
+            } }
+        </a>
     }
 }

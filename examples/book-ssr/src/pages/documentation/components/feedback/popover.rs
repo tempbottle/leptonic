@@ -2,7 +2,7 @@ use indoc::indoc;
 use leptonic::atoms::link::AnchorLink;
 use leptonic::components::prelude::*;
 use leptonic::prelude::*;
-use leptos::*;
+use leptos::prelude::*;
 
 use crate::pages::documentation::article::Article;
 use crate::pages::documentation::toc::Toc;
@@ -11,14 +11,14 @@ use crate::pages::documentation::toc::Toc;
 pub fn PagePopover() -> impl IntoView {
     view! {
         <Article>
-            <H1 id="popover" class="anchor">
+            <h1 id="popover" class="anchor">
                 "Popover"
                 <AnchorLink href="#popover" description="Direct link to article header"/>
-            </H1>
+            </h1>
 
-            <P>
+            <p>
                 "Floating information which can be shown or hidden using a signal."
-            </P>
+            </p>
 
             <Code>
                 {indoc!(r#"
@@ -48,12 +48,12 @@ pub fn PagePopover() -> impl IntoView {
                 </Popover>
             </div>
 
-            <H2 id="styling" class="anchor">
+            <h2 id="styling" class="anchor">
                 "Styling"
                 <AnchorLink href="#styling" description="Direct link to section: Styling"/>
-            </H2>
+            </h2>
 
-            <P>"You may overwrite any of the following CSS variables to meet your styling needs."</P>
+            <p>"You may overwrite any of the following CSS variables to meet your styling needs."</p>
 
             <Code>
                 {indoc!(r"

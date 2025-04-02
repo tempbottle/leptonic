@@ -1,12 +1,12 @@
-use std::rc::Rc;
+use std::marker::PhantomData;
 
 use educe::Educe;
-use leptos::{html::ElementDescriptor, Attribute, NodeRef, Oco};
-use leptos_reactive::{create_memo, MaybeSignal, SignalGet};
-use leptos_use::{use_element_bounding, use_window, UseElementBoundingReturn};
-use typed_builder::TypedBuilder;
+use leptos::prelude::*;
+use leptos::tachys::html::style::Style;
+use leptos_use::core::IntoElementMaybeSignal;
+use leptos_use::{use_document, use_element_bounding};
 
-use crate::utils::{attributes::Attributes, locale::WritingDirection};
+use crate::utils::locale::WritingDirection;
 
 // TODO: Serialize, Deserialize, Display, FormStr ???
 
@@ -69,130 +69,80 @@ impl PlacementX {
     }
 }
 
-#[derive(Clone, Copy, Educe, TypedBuilder)]
+#[derive(Clone, Copy, Educe)]
 #[educe(Debug)]
-pub struct UseOverlayPositionInput<OverlayRef, TargetRef, ContainerRef = leptos::html::Custom>
+pub struct UseOverlayPositionInput<Overlay, Target, M>
 where
-    OverlayRef: ElementDescriptor + 'static,
-    TargetRef: ElementDescriptor + 'static,
-    ContainerRef: ElementDescriptor + 'static,
+    Overlay: IntoElementMaybeSignal<web_sys::Element, M>,
+    Target: IntoElementMaybeSignal<web_sys::Element, M>,
 {
     /// Element that resembles the overlay content.
     #[educe(Debug(ignore))]
-    #[builder(setter(into))]
-    pub(crate) overlay_ref: NodeRef<OverlayRef>,
+    pub overlay: Overlay,
 
     /// Element to which the overlay should be positioned relative to.
     #[educe(Debug(ignore))]
-    #[builder(setter(into))]
-    pub(crate) target_ref: NodeRef<TargetRef>,
+    pub target: Target,
 
-    /// Element in which the overlay should be contained.
-    /// Dimensions of this container are used to calculate positional flips of the overlay.
-    /// If omitted, the **window** acts as the container,
-    /// resulting in overlays switching places if they would otherwise go out ot the visible viewport.
-    #[educe(Debug(ignore))]
-    #[builder(default = None, setter(into))]
-    pub(crate) container_ref: Option<NodeRef<ContainerRef>>,
+    pub placement_x: Signal<PlacementX>,
+    pub placement_y: Signal<PlacementY>,
 
-    #[builder(setter(into))]
-    pub(crate) placement_x: MaybeSignal<PlacementX>,
+    pub writing_direction: Signal<WritingDirection>,
 
-    #[builder(setter(into))]
-    pub(crate) placement_y: MaybeSignal<PlacementY>,
-
-    #[builder(setter(into))]
-    pub(crate) writing_direction: MaybeSignal<WritingDirection>,
+    pub phantom_data: PhantomData<M>,
 }
 
 #[derive(Debug)]
 pub struct UseOverlayPositionReturn {
-    pub props: UseOverlayPositionProps,
+    pub attrs: UseOverlayPositionAttrs,
 }
 
-#[derive(Debug)]
-pub struct UseOverlayPositionProps {
-    pub attrs: Attributes,
-}
+pub type UseOverlayPositionAttrs = (
+    Style<Signal<(&'static str, String)>>,
+);
 
-pub fn use_overlay_position<OverlayRef, TargetRef, ContainerRef>(
-    input: UseOverlayPositionInput<OverlayRef, TargetRef, ContainerRef>,
+pub fn use_overlay_position<Overlay, Target, M>(
+    input: UseOverlayPositionInput<Overlay, Target, M>,
 ) -> UseOverlayPositionReturn
 where
-    OverlayRef: ElementDescriptor + Clone + 'static,
-    TargetRef: ElementDescriptor + Clone + 'static,
-    ContainerRef: ElementDescriptor + Clone + 'static,
+    Overlay: IntoElementMaybeSignal<web_sys::Element, M>,
+    Target: IntoElementMaybeSignal<web_sys::Element, M>,
 {
-    let UseElementBoundingReturn {
-        height: overlay_height,
-        width: overlay_width,
-        left: _overlay_left,
-        right: _overlay_right,
-        top: _overlay_top,
-        bottom: _overlay_bottom,
-        x: _overlay_x,
-        y: _overlay_y,
-        update: _overlay_update,
-    } = use_element_bounding(input.overlay_ref);
+    let overlay_bounding = use_element_bounding(input.overlay);
+    let target_bounding = use_element_bounding(input.target);
 
-    let UseElementBoundingReturn {
-        height: target_height,
-        width: target_width,
-        left: target_left,
-        right: target_right,
-        top: target_top,
-        bottom: target_bottom,
-        x: _target_x,
-        y: _target_y,
-        update: _target_update,
-    } = use_element_bounding(input.target_ref);
-
-    let container_bounding = input.container_ref.map(use_element_bounding);
-    let container_width = container_bounding.as_ref().map(|it| it.width);
-    let container_height = container_bounding.as_ref().map(|it| it.height);
-
-    let window_width = move || match use_window().as_ref() {
-        Some(window) => match window.inner_width() {
-            Ok(val) => val.as_f64().unwrap_or(0.0),
-            Err(_val) => 0.0,
+    let container_width = move || match use_document().as_ref() {
+        Some(document) => match document.body() {
+            Some(body) => body.client_width() as f64,
+            None => 0.0,
         },
         None => 0.0,
     };
 
-    let window_height = move || match use_window().as_ref() {
-        Some(window) => match window.inner_height() {
-            Ok(val) => val.as_f64().unwrap_or(0.0),
-            Err(_val) => 0.0,
+    let container_height = move || match use_document().as_ref() {
+        Some(document) => match document.body() {
+            Some(body) => body.client_height() as f64,
+            None => 0.0,
         },
         None => 0.0,
     };
 
-    let container_width = move || match container_width {
-        Some(container_width) => container_width.get(),
-        None => window_width(),
-    };
-
-    let container_height = move || match container_height {
-        Some(container_height) => container_height.get(),
-        None => window_height(),
-    };
-
-    let placement_x = create_memo(move |_| {
+    let placement_x = Memo::new(move |_| {
         match input
             .placement_x
             .get()
             .direction_aware(input.writing_direction.get())
         {
             original @ PhysicalPlacementX::OuterLeft => {
-                let space_left = target_left.get();
-                match overlay_width.get() > space_left {
+                let space_left = target_bounding.left.get();
+                match overlay_bounding.width.get() > space_left {
                     true => PhysicalPlacementX::OuterRight,
                     false => original,
                 }
             }
             original @ PhysicalPlacementX::OuterRight => {
-                let space_right = container_width() - target_right.get();
-                match overlay_width.get() > space_right {
+                let space_right = container_width() - target_bounding.right.get();
+                match overlay_bounding.width.get() > space_right {
                     true => PhysicalPlacementX::OuterLeft,
                     false => original,
                 }
@@ -201,17 +151,17 @@ where
         }
     });
 
-    let placement_y = create_memo(move |_| match input.placement_y.get() {
+    let placement_y = Memo::new(move |_| match input.placement_y.get() {
         original @ PlacementY::Above => {
-            let space_top = target_top.get();
-            match overlay_height.get() > space_top {
+            let space_top = target_bounding.top.get();
+            match overlay_bounding.height.get() > space_top {
                 true => PlacementY::Below,
                 false => original,
             }
         }
         original @ PlacementY::Below => {
-            let space_bottom = container_height() - target_bottom.get();
-            match overlay_height.get() > space_bottom {
+            let space_bottom = container_height() - target_bounding.bottom.get();
+            match overlay_bounding.height.get() > space_bottom {
                 true => PlacementY::Above,
                 false => original,
             }
@@ -219,37 +169,36 @@ where
         other => other,
     });
 
-    let top = create_memo(move |_| match placement_y.get() {
-        PlacementY::Above => target_top.get() - overlay_height.get(),
-        PlacementY::Top => target_top.get(),
+    let top = Memo::new(move |_| match placement_y.get() {
+        PlacementY::Above => target_bounding.top.get() - overlay_bounding.height.get(),
+        PlacementY::Top => target_bounding.top.get(),
         PlacementY::Center => {
-            target_top.get() + (target_height.get() / 2.0) - (overlay_height.get() / 2.0)
+            target_bounding.top.get() + (target_bounding.height.get() / 2.0)
+                - (overlay_bounding.height.get() / 2.0)
         }
-        PlacementY::Bottom => target_bottom.get() - overlay_height.get(),
-        PlacementY::Below => target_bottom.get(),
+        PlacementY::Bottom => target_bounding.bottom.get() - overlay_bounding.height.get(),
+        PlacementY::Below => target_bounding.bottom.get(),
     });
 
-    let left = create_memo(move |_| match placement_x.get() {
-        PhysicalPlacementX::OuterLeft => target_left.get() - overlay_width.get(),
-        PhysicalPlacementX::Left => target_left.get(),
+    let left = Memo::new(move |_| match placement_x.get() {
+        PhysicalPlacementX::OuterLeft => target_bounding.left.get() - overlay_bounding.width.get(),
+        PhysicalPlacementX::Left => target_bounding.left.get(),
         PhysicalPlacementX::Center => {
-            target_left.get() + (target_width.get() / 2.0) - (overlay_width.get() / 2.0)
+            target_bounding.left.get() + (target_bounding.width.get() / 2.0)
+                - (overlay_bounding.width.get() / 2.0)
         }
-        PhysicalPlacementX::Right => target_right.get() - overlay_width.get(),
-        PhysicalPlacementX::OuterRight => target_right.get(),
+        PhysicalPlacementX::Right => target_bounding.right.get() - overlay_bounding.width.get(),
+        PhysicalPlacementX::OuterRight => target_bounding.right.get(),
     });
-
-    let attrs = Attributes::new().insert(
-        "style",
-        Attribute::Fn(Rc::new(move || {
-            let top = top.get();
-            let left = left.get();
-            let style = format!("position: fixed; z-index: 100000; top: {top}px; left: {left}px");
-            Attribute::String(Oco::Owned(style))
-        })),
-    );
 
     UseOverlayPositionReturn {
-        props: UseOverlayPositionProps { attrs },
+        attrs: (
+            leptos::tachys::html::style::style(Signal::derive(move || {
+                let top = top.get();
+                let left = left.get();
+                let position = format!("fixed; z-index: 100000; top: {top}px; left: {left}px");
+                ("position", position)
+            })),
+        ),
     }
 }

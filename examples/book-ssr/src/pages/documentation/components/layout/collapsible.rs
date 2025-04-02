@@ -1,6 +1,6 @@
 use indoc::indoc;
 use leptonic::{atoms::link::AnchorLink, components::prelude::*, prelude::*};
-use leptos::*;
+use leptos::prelude::*;
 
 use crate::pages::documentation::{article::Article, toc::Toc};
 
@@ -8,10 +8,10 @@ use crate::pages::documentation::{article::Article, toc::Toc};
 pub fn PageCollapsible() -> impl IntoView {
     view! {
         <Article>
-            <H1 id="collapsible" class="anchor">
+            <h1 id="collapsible" class="anchor">
                 "Collapsible"
                 <AnchorLink href="#collapsible" description="Direct link to article header"/>
-            </H1>
+            </h1>
 
             <Code>
                 {indoc!(r#"
@@ -19,7 +19,7 @@ pub fn PageCollapsible() -> impl IntoView {
                         <Stack spacing=Size::Em(0.6)>
                             <Collapsible>
                                 <CollapsibleHeader slot>"Header1"</CollapsibleHeader>
-                                <CollapsibleBody class="my-body" slot>"Body1"</CollapsibleBody>
+                                <CollapsibleBody attr:class="my-body" slot>"Body1"</CollapsibleBody>
                             </Collapsible>
                             <Collapsible>
                                 <CollapsibleHeader slot>"Header2"</CollapsibleHeader>

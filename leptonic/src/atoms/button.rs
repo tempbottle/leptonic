@@ -1,186 +1,162 @@
-use std::rc::Rc;
-
-use leptos::*;
-use leptos_router::AProps;
-use web_sys::FocusEvent;
+use leptos::html;
+use leptos::prelude::*;
+use leptos_router::components::{AProps, ToHref, A};
 
 use crate::{
-    hooks::*,
-    utils::aria::{AriaAccessibleName, AriaExpanded, AriaHasPopup},
-    OptMaybeSignal, Transparent,
+    hooks::{
+        use_button, HoverEndEvent, HoverStartEvent, PressEvent, UseButtonInput, UseButtonReturn,
+        UseFocusInput, UseHoverInput, UsePressInput,
+    },
+    utils::aria::{AriaExpanded, AriaHasPopup},
 };
-
-use super::AttributeExt;
 
 #[component]
 pub fn Button(
-    #[prop(into, optional)] on_press: Option<Callback<PressEvent>>,
-    #[prop(into, optional)] on_hover_start: Option<Callback<HoverStartEvent>>,
-    #[prop(into, optional)] on_hover_end: Option<Callback<HoverEndEvent>>,
-    #[prop(into, optional)] on_focus_change: Option<Callback<bool>>,
-    #[prop(into, optional)] on_focus: Option<Callback<FocusEvent>>,
-    #[prop(into, optional)] on_blur: Option<Callback<FocusEvent>>,
-    #[prop(into, optional)] disabled: OptMaybeSignal<bool>,
-    #[prop(into, optional)] id: Option<AttributeValue>,
-    #[prop(into, optional)] class: Option<AttributeValue>,
-    #[prop(into, optional)] style: Option<AttributeValue>,
-    #[prop(into, optional)] aria_haspopup: OptMaybeSignal<AriaHasPopup>,
-    #[prop(into, optional)] aria_expanded: OptMaybeSignal<AriaExpanded>,
-    #[prop(into, optional)] aria_label: OptMaybeSignal<Oco<'static, str>>,
-    /// Arbitrary additional attributes. Can be declared using the `attr:` syntax.
-    #[prop(attrs)]
-    attributes: Vec<(&'static str, Attribute)>,
+    #[prop(into, optional)] on_press: Option<Callback<(PressEvent,)>>,
+    #[prop(into, optional)] on_hover_start: Option<Callback<(HoverStartEvent,)>>,
+    #[prop(into, optional)] on_hover_end: Option<Callback<(HoverEndEvent,)>>,
+    #[prop(into, optional)] disabled: Signal<bool>,
+    #[prop(into, optional)] aria_haspopup: Signal<AriaHasPopup>,
+    #[prop(into, optional)] aria_expanded: Signal<AriaExpanded>,
     children: Children,
 ) -> impl IntoView {
-    let el: NodeRef<html::Button> = create_node_ref();
+    let el: NodeRef<html::Button> = NodeRef::new();
 
-    // TODO: This is extremely ugly, bu necessary when using `strip_option` on our builder.
-    // His could be changed when https://github.com/idanarye/rust-typed-builder/issues/117 is resolved.
-    let focus_input = UseFocusInput::builder();
-    let focus_input = focus_input.disabled(disabled.or(false));
-    let focus_input = if let Some(on_focus) = on_focus {
-        let focus_input = focus_input.on_focus(on_focus);
-        if let Some(on_blur) = on_blur {
-            let focus_input = focus_input.on_blur(on_blur);
-            if let Some(on_focus_change) = on_focus_change {
-                let focus_input = focus_input.on_focus_change(on_focus_change);
-                focus_input.build()
-            } else {
-                focus_input.build()
-            }
-        } else {
-            focus_input.build()
-        }
-    } else {
-        focus_input.build()
-    };
-
-    // TODO: This is extremely ugly, but necessary when using `strip_option` on our builder.
-    // His could be changed when https://github.com/idanarye/rust-typed-builder/issues/117 is resolved.
-    let hover_input = UseHoverInput::builder();
-    let hover_input = hover_input.disabled(disabled.or(false));
-    let hover_input = if let Some(on_hover_start) = on_hover_start {
-        let hover_input = hover_input.on_hover_start(on_hover_start);
-        if let Some(on_hover_end) = on_hover_end {
-            let hover_input = hover_input.on_hover_end(on_hover_end);
-            hover_input.build()
-        } else {
-            hover_input.build()
-        }
-    } else {
-        hover_input.build()
-    };
-
-    // TODO: This is extremely ugly, but necessary when using `strip_option` on our builder.
-    // His could be changed when https://github.com/idanarye/rust-typed-builder/issues/117 is resolved.
-    let press_input = UsePressInput::builder();
-    let press_input = press_input.disabled(disabled.or(false));
-    let press_input = if let Some(on_press) = on_press {
-        press_input.on_press(on_press).build()
-    } else {
-        press_input.build()
-    };
-
-    let btn = use_button(
-        UseButtonInput::builder()
-            .node_ref(el)
-            .disabled(disabled.or(false))
-            .aria_haspopup(aria_haspopup.or_default())
-            .aria_expanded(aria_expanded.or_default())
-            .use_press_input(press_input)
-            .use_focus_input(focus_input)
-            .use_hover_input(hover_input)
-            .build(),
-    );
-
-    let attributes = btn.props.attrs.merge(attributes);
+    let UseButtonReturn {
+        attrs,
+        is_hovered: _,
+        is_pressed: _,
+    } = use_button(UseButtonInput {
+        node_ref: el,
+        disabled,
+        aria_haspopup,
+        aria_expanded,
+        use_press_input: UsePressInput {
+            disabled,
+            force_prevent_default: false,
+            allow_propagation: false,
+            on_press: Callback::new(move |e| match on_press {
+                Some(on_press) => on_press.run(e),
+                None => {}
+            }),
+            on_press_up: None,
+            on_press_start: None,
+            on_press_end: None,
+        },
+        use_hover_input: UseHoverInput {
+            disabled,
+            on_hover_start,
+            on_hover_end,
+        },
+        use_focus_input: UseFocusInput {
+            disabled,
+            on_focus: None,
+            on_blur: None,
+            on_focus_change: None,
+        },
+    });
 
     view! {
-        <Transparent>
-            <button
-                {..attributes}
-                {..btn.props.handlers}
-                aria-label=aria_label.get()
-                node_ref=el
-                id=id
-                class=class
-                class:leptonic-btn=true
-                style=style
-            >
-                { children() }
-            </button>
-        </Transparent>
+        <button
+            node_ref=el
+            class="leptonic-btn"
+            {..attrs}
+        >
+            { children() }
+        </button>
+    }
+}
+
+#[derive(Debug, Default, PartialEq, Eq)]
+pub enum LinkTarget {
+    /// Opens the linked document in a new window or tab.
+    _Blank,
+    /// Opens the linked document in the same frame as it was clicked (this is the default).
+    #[default]
+    _Self,
+    /// Opens the linked document in the parent frame.
+    _Parent,
+    /// Opens the linked document in the full body of the window.
+    _Top,
+    /// Opens the linked document in the frame with the given name.
+    Frame { with_name: Oco<'static, str> },
+}
+
+impl LinkTarget {
+    fn to_oco(&self) -> Oco<'static, str> {
+        match self {
+            LinkTarget::_Blank => Oco::Borrowed("_blank"),
+            LinkTarget::_Self => Oco::Borrowed("_self"),
+            LinkTarget::_Parent => Oco::Borrowed("_parent"),
+            LinkTarget::_Top => Oco::Borrowed("_top"),
+            LinkTarget::Frame { with_name } => with_name.clone(),
+        }
     }
 }
 
 #[component]
 pub fn LinkButton<H>(
     href: H,
-    #[prop(into, optional)] on_hover_start: Option<Callback<HoverStartEvent>>,
-    #[prop(into, optional)] on_hover_end: Option<Callback<HoverEndEvent>>,
-    #[prop(into, optional)] disabled: OptMaybeSignal<bool>,
-    #[prop(into, optional)] id: Option<Oco<'static, str>>,
-    #[prop(into, optional)] class: Option<AttributeValue>,
-    #[prop(into, optional)] style: Option<AttributeValue>,
-    #[prop(into, optional)] aria_haspopup: OptMaybeSignal<AriaHasPopup>,
-    #[prop(into, optional)] aria_expanded: OptMaybeSignal<AriaExpanded>,
-    #[prop(into, optional)] accessible_name: OptMaybeSignal<AriaAccessibleName>, // TODO: Does this really need to be a signal???
+
+    /// Where to display the linked URL, as the name for a browsing context (a tab, window, or `<iframe>`).
+    #[prop(into, optional)]
+    target: Option<LinkTarget>,
+
+    #[prop(into, optional)] on_hover_start: Option<Callback<(HoverStartEvent,)>>,
+
+    #[prop(into, optional)] on_hover_end: Option<Callback<(HoverEndEvent,)>>,
+
+    #[prop(into, optional)] disabled: Option<Signal<bool>>,
+
+    #[prop(into, optional)] aria_haspopup: Option<Signal<AriaHasPopup>>,
+
+    #[prop(into, optional)] aria_expanded: Option<Signal<AriaExpanded>>,
+
     /// If `true`, the link is marked active when the location matches exactly;
     /// if false, link is marked active if the current route starts with it.
     #[prop(optional)]
     exact: bool,
-    /// An object of any type that will be pushed to router state
-    #[prop(optional)]
-    state: Option<leptos_router::State>,
-    /// If `true`, the link will not add to the browser's history (so, pressing `Back`
-    /// will skip this page.)
-    #[prop(optional)]
-    replace: bool,
-    /// Arbitrary additional attributes.
-    #[prop(attrs)]
-    attributes: Vec<(&'static str, Attribute)>,
+
     children: Children,
 ) -> impl IntoView
 where
-    H: leptos_router::ToHref + 'static,
+    H: ToHref + Send + Sync + 'static,
 {
+    let disabled = disabled.unwrap_or(Signal::from(false));
+
     let UseButtonReturn {
-        props,
-        press_responder: _,
+        attrs,
+        is_hovered: _,
+        is_pressed: _,
     } = use_button(UseButtonInput {
-        node_ref: NodeRef::<html::Custom>::new(),
-        disabled: disabled.or(false),
-        aria_haspopup: aria_haspopup.or_default(),
-        aria_expanded: aria_expanded.or_default(),
+        node_ref: NodeRef::<html::Custom<&str>>::new(),
+        disabled,
+        aria_haspopup: aria_haspopup.unwrap_or_default(),
+        aria_expanded: aria_expanded.unwrap_or_default(),
         use_press_input: UsePressInput {
-            disabled: disabled.or(false),
+            disabled,
             force_prevent_default: false,
-            on_press: None,
+            // Without setting this, Leptos' client-side navigation would not take place.
+            allow_propagation: true,
+            on_press: Callback::new(move |_e| {}),
             on_press_up: None,
             on_press_start: None,
             on_press_end: None,
         },
-        use_hover_input: Some(UseHoverInput {
-            disabled: disabled.or(false),
+        use_hover_input: UseHoverInput {
+            disabled,
             on_hover_start,
             on_hover_end,
-        }),
-        use_focus_input: Some(UseFocusInput {
-            disabled: disabled.or(false),
+        },
+        use_focus_input: UseFocusInput {
+            disabled,
             on_focus: None,
             on_blur: None,
             on_focus_change: None,
-        }),
+        },
     });
 
-    let mut attrs = props.attrs.merge(attributes);
-    if let Some(style) = style {
-        attrs = attrs.insert("style", style.into_attribute_boxed());
-    }
-    if let Some(sig) = accessible_name.0 {
-        attrs = attrs.insert("aria-label", Attribute::Fn(Rc::new(move || sig.get().into_attribute())));
-    }
-
+    /*
     let default_class = "leptonic-btn";
     let class: Option<Box<dyn IntoAttribute>> = class
         .map(|c| {
@@ -192,22 +168,25 @@ where
             let as_dyn: Box<dyn IntoAttribute> = Box::new(new);
             Some(as_dyn)
         });
+     */
 
-    leptos_router::A(AProps {
+    let target: Option<Oco<'static, str>> = Some(target.unwrap_or_default())
+        .filter(|it| it != &LinkTarget::_Self)
+        .map(|it| it.to_oco());
+
+    // TODO: Propagate scroll and strict_trailing_slash?
+    // TODO (new): Does a class in props.attrs override this? Do we need the old "prepend" logic?
+
+    A(AProps {
         href,
-        target: None, // TODO: Propagate this?
+        target,
         exact,
-        active_class: None, // TODO: Propagate this?
-        state,
-        replace,
-        class,
-        id,
-        attributes: attrs.map.into_iter().collect::<Vec<_>>(),
+        strict_trailing_slash: false,
+        scroll: true,
         children,
     })
-    .into_view()
-    // TODO(handlers)
-    //.bindings(props.handlers)
+    .attr("class", "leptonic-btn")
+    .add_any_attr(attrs)
 }
 
 #[component]

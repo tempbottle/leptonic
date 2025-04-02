@@ -1,26 +1,26 @@
 use indoc::indoc;
 use leptonic::{atoms::link::AnchorLink, components::prelude::*};
-use leptos::*;
+use leptos::prelude::*;
 
 use crate::pages::documentation::{article::Article, toc::Toc};
 
 #[component]
 pub fn PageCheckbox() -> impl IntoView {
-    let (checked, set_checked) = create_signal(false);
-    let (checked_disabled, set_checked_disabled) = create_signal(false);
+    let (checked, set_checked) = signal(false);
+    let (checked_disabled, set_checked_disabled) = signal(false);
 
     view! {
         <Article>
-            <H1 id="checkbox" class="anchor">
+            <h1 id="checkbox" class="anchor">
                 "Checkbox"
                 <AnchorLink href="#checkbox" description="Direct link to article header"/>
-            </H1>
+            </h1>
 
-            <P>"Checkbox..."</P>
+            <p>"Checkbox..."</p>
 
             <Code>
                 {indoc!(r"
-                    let (checked, set_checked) = create_signal(false);
+                    let (checked, set_checked) = signal(false);
                     view! {
                         <Checkbox checked=checked set_checked=set_checked />
                     }
@@ -31,12 +31,12 @@ pub fn PageCheckbox() -> impl IntoView {
 
             <span>"checked: " {move || checked.get()}</span>
 
-            <H2 id="disabled" class="anchor">
+            <h2 id="disabled" class="anchor">
                 "Disabled"
                 <AnchorLink href="#disabled" description="Direct link to section: Disabled"/>
-            </H2>
+            </h2>
 
-            <P>"Checkboxes support the " <Code inline=true>"disabled"</Code> " property, making them unmodifiable if set true."</P>
+            <p>"Checkboxes support the " <Code inline=true>"disabled"</Code> " property, making them unmodifiable if set true."</p>
 
             <Code>
                 {indoc!(r"
@@ -47,12 +47,12 @@ pub fn PageCheckbox() -> impl IntoView {
             <Checkbox disabled=true checked=checked_disabled set_checked=set_checked_disabled />
             <Button variant=ButtonVariant::Flat color=ButtonColor::Secondary size=ButtonSize::Small on_press=move |_| set_checked_disabled.set(!checked_disabled.get_untracked())>"TOGGLE"</Button>
 
-            <H2 id="styling" class="anchor">
+            <h2 id="styling" class="anchor">
                 "Styling"
                 <AnchorLink href="#styling" description="Direct link to section: Styling"/>
-            </H2>
+            </h2>
 
-            <P>"You may overwrite any of the following CSS variables to meet your styling needs."</P>
+            <p>"You may overwrite any of the following CSS variables to meet your styling needs."</p>
 
             <Code>
                 {indoc!(r"

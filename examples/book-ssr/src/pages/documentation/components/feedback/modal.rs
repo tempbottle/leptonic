@@ -1,42 +1,41 @@
 use indoc::indoc;
 use leptonic::atoms::link::AnchorLink;
 use leptonic::components::prelude::*;
-use leptonic::prelude::*;
-use leptos::*;
+use leptos::prelude::*;
 
 use crate::pages::documentation::article::Article;
 use crate::pages::documentation::toc::Toc;
 
 #[component]
 pub fn PageModal() -> impl IntoView {
-    let (show_simple_modal, set_show_simple_modal) = create_signal(false);
+    let (show_simple_modal, set_show_simple_modal) = signal(false);
 
-    let (show_staged_modal1, set_show_staged_modal1) = create_signal(false);
-    let (show_staged_modal2, set_show_staged_modal2) = create_signal(false);
+    let (show_staged_modal1, set_show_staged_modal1) = signal(false);
+    let (show_staged_modal2, set_show_staged_modal2) = signal(false);
 
-    let escape_staged_modal1 = Producer::new(move || set_show_staged_modal1.set(false));
-    let escape_staged_modal2 = Producer::new(move || {
+    let escape_staged_modal1 = Callback::new(move |()| set_show_staged_modal1.set(false));
+    let escape_staged_modal2 = Callback::new(move |()| {
         set_show_staged_modal2.set(false);
         set_show_staged_modal1.set(true);
     });
 
-    let (show_confirm_modal, set_show_confirm_modal) = create_signal(false);
+    let (show_confirm_modal, set_show_confirm_modal) = signal(false);
 
     view! {
         <Article>
-            <H1 id="modal" class="anchor">
+            <h1 id="modal" class="anchor">
                 "Modal"
                 <AnchorLink href="#modal" description="Direct link to article header"/>
-            </H1>
+            </h1>
 
-            <P>"Create modals to ask critical questions or notify the user about an upcoming event which must be acknowledged in some way."</P>
+            <p>"Create modals to ask critical questions or notify the user about an upcoming event which must be acknowledged in some way."</p>
 
             <Code>
                 {indoc!(r#"
-                    let (show_simple_modal, set_show_simple_modal) = create_signal(false);
+                    let (show_simple_modal, set_show_simple_modal) = signal(false);
 
                     view! {
-                        <P><Button on_press=move |_| set_show_simple_modal.set(true)>"Show simple modal"</Button></P>
+                        <p><Button on_press=move |_| set_show_simple_modal.set(true)>"Show simple modal"</Button></p>
                         <Modal show_when=show_simple_modal>
                             <ModalHeader><ModalTitle>"Hello"</ModalTitle></ModalHeader>
                             <ModalBody>"This ia a simple modal."</ModalBody>
@@ -50,7 +49,7 @@ pub fn PageModal() -> impl IntoView {
                 "#)}
             </Code>
 
-            <P><Button on_press=move |_| set_show_simple_modal.set(true)>"Show simple modal"</Button></P>
+            <p><Button on_press=move |_| set_show_simple_modal.set(true)>"Show simple modal"</Button></p>
 
             <Modal
                 show_when=show_simple_modal
@@ -66,20 +65,20 @@ pub fn PageModal() -> impl IntoView {
                 </ModalFooter>
             </Modal>
 
-            <H2 id="stages" class="anchor">
+            <h2 id="stages" class="anchor">
                 "Stages"
                 <AnchorLink href="#stages" description="Direct link to section: Stages"/>
-            </H2>
+            </h2>
 
-            <P>"You can connect multiple modals by setting their visibility props appropriately."</P>
+            <p>"You can connect multiple modals by setting their visibility props appropriately."</p>
 
             <Code>
                 {indoc!(r#"
-                    let (show_staged_modal1, set_show_staged_modal1) = create_signal(false);
-                    let (show_staged_modal2, set_show_staged_modal2) = create_signal(false);
+                    let (show_staged_modal1, set_show_staged_modal1) = signal(false);
+                    let (show_staged_modal2, set_show_staged_modal2) = signal(false);
 
                     view! {
-                        <P><Button on_press=move |_| set_show_staged_modal1.set(true)>"Show staged modal"</Button></P>
+                        <p><Button on_press=move |_| set_show_staged_modal1.set(true)>"Show staged modal"</Button></p>
 
                         <Modal show_when=show_staged_modal1>
                             <ModalHeader><ModalTitle>"Sure?"</ModalTitle></ModalHeader>
@@ -105,7 +104,7 @@ pub fn PageModal() -> impl IntoView {
                 "#)}
             </Code>
 
-            <P><Button on_press=move |_| set_show_staged_modal1.set(true)>"Show staged modal"</Button></P>
+            <p><Button on_press=move |_| set_show_staged_modal1.set(true)>"Show staged modal"</Button></p>
 
             <Modal
                 show_when=show_staged_modal1
@@ -136,19 +135,19 @@ pub fn PageModal() -> impl IntoView {
                 </ModalFooter>
             </Modal>
 
-            <H2 id="react-to-user-input" class="anchor">
+            <h2 id="react-to-user-input" class="anchor">
                 "React to user input"
                 <AnchorLink href="#react-to-user-input" description="Direct link to section: React to user input"/>
-            </H2>
+            </h2>
 
-            <P>"You can include arbitrary (reactive) children inside a modal. The next modal can only be accepted after entering \"ok\" in the presented input field."</P>
+            <p>"You can include arbitrary (reactive) children inside a modal. The next modal can only be accepted after entering \"ok\" in the presented input field."</p>
 
             <Code>
                 {indoc!(r#"
-                    let (show_confirm_modal, set_show_confirm_modal) = create_signal(false);
+                    let (show_confirm_modal, set_show_confirm_modal) = signal(false);
 
                     view! {
-                        <P><Button on_press=move |_| set_show_confirm_modal.set(true)>"Show confirmation modal"</Button></P>
+                        <p><Button on_press=move |_| set_show_confirm_modal.set(true)>"Show confirmation modal"</Button></p>
 
                         <ConfirmModal
                             show_when=show_confirm_modal
@@ -160,7 +159,7 @@ pub fn PageModal() -> impl IntoView {
                 "#)}
             </Code>
 
-            <P>"Using:"</P>
+            <p>"Using:"</p>
 
             <Code>
                 {indoc!(r#"
@@ -175,9 +174,9 @@ pub fn PageModal() -> impl IntoView {
                         A: Fn() + Copy + 'static,
                         C: Fn() + Copy + 'static,
                     {
-                        let required = store_value(requires_confirmation_of);
+                        let required = StoredValue::new(requires_confirmation_of);
 
-                        let (input, set_input) = create_signal(String::new());
+                        let (input, set_input) = signal(String::new());
 
                         let confirmed = move || required.with_value(|r| input.with(|i| r == i));
                         let disabled = Signal::derive(move || !confirmed());
@@ -210,7 +209,7 @@ pub fn PageModal() -> impl IntoView {
                 "#)}
             </Code>
 
-            <P><Button on_press=move |_| set_show_confirm_modal.set(true)>"Show confirmation modal"</Button></P>
+            <p><Button on_press=move |_| set_show_confirm_modal.set(true)>"Show confirmation modal"</Button></p>
 
             <ConfirmModal
                 show_when=show_confirm_modal
@@ -219,35 +218,35 @@ pub fn PageModal() -> impl IntoView {
                 on_cancel=move || set_show_confirm_modal.set(false)
             />
 
-            <H2 id="escape" class="anchor">
+            <h2 id="escape" class="anchor">
                 "Handling escape and backdrop interactions "
                 <AnchorLink href="#escape" description="Direct link to section: Escape and backdrop interactions"/>
-            </H2>
+            </h2>
 
-            <P>"Closing a modal through a press on " <KbdKey key=Key::Escape/> " or closing it through a click outside its rendered content can be considered \"commonly expected behavior\" of modals."</P>
+            <p>"Closing a modal through a press on " <KbdKey key=Key::Escape/> " or closing it through a click outside its rendered content can be considered \"commonly expected behavior\" of modals."</p>
 
-            <P>
+            <p>
                 "Modals may be used as critical gate-keepers. The API of them should minimize error-potential as much as possible. "
                 "The author of a modal should therefore have full control, preferably at a centralized point, over all ways a modals display state may change."
                 "As the modal component does neither owns it's display state nor knows what to do when the modal is shown or hidden "
                 "(modals only know whether they should be rendered or not, reading their " <Code inline=true>"show_when"</Code> " prop) "
                 "fully automated handling of escape keys is not possible."
-            </P>
+            </p>
 
-            <P>
+            <p>
                 "Leptonic's" <Code inline=true>"Modal"</Code> " component will however automatically listen for an 'Escape' key press when the " <Code inline=true>"on_escape"</Code> " callback property is provided. "
                 "This gives you explicit control over the effect this should have."
-            </P>
+            </p>
 
-            <P>
+            <p>
                 "The " <Code inline=true>"Modal"</Code> "'s " <Code inline=true>"on_backdrop_interaction"</Code> " callback property allows you to handle user interactions with the backdrop. "
                 "In the current implementation, pressing the backdrop triggers the callback. "
                 "This gives you explicit control over the effect this should have."
-            </P>
+            </p>
 
-            <P>
+            <p>
                 "We snuck this in for all example modals (even the staged one). For our first example, it simply looks like this."
-            </P>
+            </p>
 
             <Code>
                 {indoc!(r#"
@@ -267,12 +266,12 @@ pub fn PageModal() -> impl IntoView {
                 "#)}
             </Code>
 
-            <H2 id="styling" class="anchor">
+            <h2 id="styling" class="anchor">
                 "Styling"
                 <AnchorLink href="#styling" description="Direct link to section: Styling"/>
-            </H2>
+            </h2>
 
-            <P>"You may overwrite any of the following CSS variables to meet your styling needs."</P>
+            <p>"You may overwrite any of the following CSS variables to meet your styling needs."</p>
 
             <Code>
                 {indoc!(r"
@@ -309,31 +308,27 @@ pub fn ConfirmModal<A, C>(
     on_cancel: C,
 ) -> impl IntoView
 where
-    A: Fn() + Copy + 'static,
-    C: Fn() + Copy + 'static,
+    A: Fn() + Send + Sync + Copy + 'static,
+    C: Fn() + Send + Sync + Copy + 'static,
 {
-    let required = store_value(requires_confirmation_of);
+    let required = StoredValue::new(requires_confirmation_of);
 
-    let (input, set_input) = create_signal(String::new());
+    let (input, set_input) = signal(String::new());
 
     let confirmed = move || required.with_value(|r| input.with(|i| r == i));
     let disabled = Signal::derive(move || !confirmed());
 
     let on_accept = move || {
         set_input.update(|it| it.clear());
-        (on_accept)();
+        on_accept();
     };
     let on_cancel = move || {
         set_input.update(|it| it.clear());
-        (on_cancel)();
+        on_cancel();
     };
 
     view! {
-        <Modal
-            show_when=show_when
-            on_escape=move || (on_cancel)()
-            on_backdrop_interaction=move || (on_cancel)()
-        >
+        <Modal show_when=show_when on_escape=move || on_cancel()>
             <ModalHeader><ModalTitle>"Delete repository?"</ModalTitle></ModalHeader>
             <ModalBody>
                 "Please enter \""{required.get_value()}"\" to confirm."
@@ -341,8 +336,8 @@ where
             </ModalBody>
             <ModalFooter>
                 <ButtonWrapper>
-                    <Button on_press=move |_| (on_accept)() disabled=disabled color=ButtonColor::Danger>"Confirm"</Button>
-                    <Button on_press=move |_| (on_cancel)() color=ButtonColor::Secondary>"Cancel"</Button>
+                    <Button on_press=move |_| on_accept() disabled=disabled color=ButtonColor::Danger>"Confirm"</Button>
+                    <Button on_press=move |_| on_cancel() color=ButtonColor::Secondary>"Cancel"</Button>
                 </ButtonWrapper>
             </ModalFooter>
         </Modal>

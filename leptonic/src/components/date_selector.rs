@@ -1,4 +1,4 @@
-use leptos::*;
+use leptos::prelude::*;
 
 use crate::{
     hooks::calendar::use_calendar,
@@ -20,21 +20,20 @@ pub fn DateSelector(
     #[prop(into)] on_change: Out<time::OffsetDateTime>,
     #[prop(optional)] min: Option<time::OffsetDateTime>,
     #[prop(optional)] max: Option<time::OffsetDateTime>,
-    #[prop(into, optional, default = GuideMode::CalendarFirst.into())] guide_mode: MaybeSignal<
-        GuideMode,
-    >,
+    // TODO (new): guide_mode should not be a signal!
+    #[prop(into, optional, default = GuideMode::CalendarFirst.into())] guide_mode: Signal<GuideMode>,
 ) -> impl IntoView {
     let calendar = use_calendar(value, min, max);
 
-    create_effect(move |_| on_change.set(calendar.selected.get()));
+    Effect::new(move |_| on_change.set(calendar.selected.get()));
 
-    let (show, set_show) = create_signal(match guide_mode.get() {
+    let (show, set_show) = signal(match guide_mode.get() {
         GuideMode::CalendarFirst => Selection::Day,
         GuideMode::YearFirst => Selection::Year,
     });
 
     // TODO: Support internationalization
-    let (short_weekday_names, _) = create_signal(create_week_day_names());
+    let (short_weekday_names, _) = signal(create_week_day_names());
 
     view! {
         <leptonic-datetime>
@@ -53,7 +52,7 @@ pub fn DateSelector(
                             <div on:click=move |_| calendar.select_next_years()
                                 class="next arrow-right">
                             </div>
-                        },
+                        }.into_any(),
                         Selection::Month => view! {
                             <div on:click=move |_| calendar.select_previous_year()
                                 class="previous arrow-left">
@@ -65,7 +64,7 @@ pub fn DateSelector(
                             <div on:click=move |_| calendar.select_next_year()
                                 class="next arrow-right">
                             </div>
-                        },
+                        }.into_any(),
                         Selection::Day => view! {
                             <div on:click=move |_| calendar.select_previous_month()
                                 class="previous arrow-left">
@@ -77,7 +76,7 @@ pub fn DateSelector(
                             <div on:click=move |_| calendar.select_next_month()
                                 class="next arrow-right">
                             </div>
-                        },
+                        }.into_any(),
                     }}
                 </div>
 

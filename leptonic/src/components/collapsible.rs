@@ -1,6 +1,5 @@
+use leptos::prelude::*;
 use std::sync::{Arc, RwLock};
-
-use leptos::*;
 use tracing::warn;
 use uuid::Uuid;
 
@@ -83,7 +82,7 @@ pub fn Collapsibles(default_on_open: OnOpen, children: Children) -> impl IntoVie
 pub fn use_collapsible(open: bool, on_open: Option<OnOpen>) -> CollapsibleContext {
     let id = Uuid::new_v4();
 
-    let (show, set_show) = create_signal(open);
+    let (show, set_show) = signal(open);
 
     let mut parent = use_context::<CollapsiblesContext>();
 
@@ -144,8 +143,6 @@ pub fn use_collapsible_header() -> CollapsibleHeaderWrapperContext {
 #[slot]
 pub struct CollapsibleHeader {
     children: Children,
-    #[prop(into, optional)]
-    class: Option<AttributeValue>,
 }
 
 #[component]
@@ -154,13 +151,13 @@ fn CollapsibleHeaderInternal(collapsible_header: CollapsibleHeader) -> impl Into
     let ctx2 = use_collapsible_header();
     view! {
         <leptonic-collapsible-header-wrapper on:click=move |_| ctx.collapsible_ctx.toggle()>
-            <leptonic-collapsible-header class=collapsible_header.class>
+            <leptonic-collapsible-header>
                 { (collapsible_header.children)() }
             </leptonic-collapsible-header>
 
             { move ||  match ctx2.collapsible_ctx.show.get() {
-                true => view! { <Icon icon=icondata::BsCaretUpFill/>}.into_view(),
-                false => view! { <Icon icon=icondata::BsCaretDownFill/>}.into_view()
+                true => view! { <Icon icon=icondata::BsCaretUpFill/>}.into_any(),
+                false => view! { <Icon icon=icondata::BsCaretDownFill/>}.into_any()
             } }
         </leptonic-collapsible-header-wrapper>
     }
@@ -169,8 +166,10 @@ fn CollapsibleHeaderInternal(collapsible_header: CollapsibleHeader) -> impl Into
 #[slot]
 pub struct CollapsibleBody {
     children: Children,
+
+    // TODO: This does not allow for reactive classes, nor are any other attributes allowed on this slot.... Find a different solution.
     #[prop(into, optional)]
-    class: Option<AttributeValue>,
+    class: String,
 }
 
 #[component]

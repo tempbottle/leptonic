@@ -1,123 +1,113 @@
+use std::fmt::{Debug, Formatter};
 use educe::Educe;
-use leptos::{html::ElementDescriptor, Attribute, IntoAttribute, NodeRef};
-use leptos_reactive::{MaybeSignal, Oco};
-use typed_builder::TypedBuilder;
+use leptos::ev::On;
+use leptos::html::ElementType;
+use leptos::prelude::*;
+use leptos::{attr, ev};
+use leptos::attr::Attr;
+use web_sys::{FocusEvent, KeyboardEvent, MouseEvent, PointerEvent};
 
-use crate::utils::{
-    aria::*, attributes::Attributes, event_handlers::EventHandlers, signals::MaybeSignalExt,
-};
+use crate::utils::aria::*;
 
-use super::{
-    focus::use_focus::{use_focus, UseFocusInput},
-    interactions::{
-        use_hover::{use_hover, UseHoverInput},
-        use_press::{use_press, PressResponder, UsePressInput},
-    },
-};
+use super::{focus::use_focus::{use_focus, UseFocusInput}, interactions::{
+    use_hover::{use_hover, UseHoverInput},
+    use_press::{use_press, UsePressInput},
+}, UseFocusReturn, UseHoverReturn, UsePressReturn};
 
-#[derive(Clone, Copy, Educe, TypedBuilder)]
+#[derive(Clone, Copy, Educe)]
 #[educe(Debug)]
-pub struct UseButtonInput<E: ElementDescriptor + 'static> {
+pub struct UseButtonInput<E: ElementType + 'static> {
     #[educe(Debug(ignore))]
-    pub(crate) node_ref: NodeRef<E>,
+    pub node_ref: NodeRef<E>,
+    pub disabled: Signal<bool>,
+    pub aria_haspopup: Signal<AriaHasPopup>,
+    pub aria_expanded: Signal<AriaExpanded>,
 
-    /// Whether this button is disabled.
-    #[builder(setter(into))]
-    pub(crate) disabled: MaybeSignal<bool>,
-
-    #[builder(default = AriaHasPopup::default().into(), setter(into))]
-    pub(crate) aria_haspopup: MaybeSignal<AriaHasPopup>,
-
-    #[builder(default = AriaExpanded::default().into(), setter(into))]
-    pub(crate) aria_expanded: MaybeSignal<AriaExpanded>,
-
-    /// Press behavior of this button.
-    pub(crate) use_press_input: UsePressInput,
-
-    /// Optional hover behavior. Omit this if you are not interested in programmatically handling hover events.
-    #[builder(default = None, setter(strip_option))]
-    pub(crate) use_hover_input: Option<UseHoverInput>,
-
-    /// Optional focus behavior. Omit this if you are not interested in programmatically handling focus events.
-    #[builder(default = None,setter(strip_option))]
-    pub(crate) use_focus_input: Option<UseFocusInput>,
+    pub use_press_input: UsePressInput,
+    pub use_hover_input: UseHoverInput,
+    pub use_focus_input: UseFocusInput,
 }
 
-#[derive(Debug)]
 pub struct UseButtonReturn {
     /// Spread these props onto your button using the spread syntax: `<button {..props}>...`
-    pub props: UseButtonProps,
-    pub press_responder: PressResponder,
+    pub attrs: UseButtonAttrs,
+    pub is_hovered: Signal<bool>,
+    pub is_pressed: Signal<bool>,
 }
 
-#[derive(Educe)]
-#[educe(Debug)]
-pub struct UseButtonProps {
-    /// These attributes must be spread onto the target element: `<foo {..props.attrs} />`
-    pub attrs: Attributes,
-    /// These handlers must be spread onto the target element: `<foo {..props.handlers} />`
-    pub handlers: EventHandlers,
+/// These attributes must be spread onto the target element using the spread syntax `<div {..attrs}/>`.
+pub type UseButtonAttrs = (
+    Attr<attr::Role, &'static str>,
+    Attr<attr::Tabindex, Signal<Option<&'static str>>>,
+    Attr<attr::Disabled, Signal<bool>>,
+    Attr<attr::AriaDisabled, Signal<&'static str>>,
+    Attr<attr::AriaHaspopup, Signal<&'static str>>,
+    Attr<attr::AriaExpanded, Signal<&'static str>>,
+    On<ev::keydown, Box<dyn Fn(KeyboardEvent) + Send + Sync + 'static>>,
+    On<ev::click, Box<dyn Fn(MouseEvent) + Send + Sync + 'static>>,
+    On<ev::pointerdown, Box<dyn Fn(PointerEvent) + Send + Sync + 'static>>,
+    On<ev::pointerenter, Box<dyn Fn(PointerEvent) + Send + Sync + 'static>>,
+    On<ev::pointerleave, Box<dyn Fn(PointerEvent) + Send + Sync + 'static>>,
+    On<ev::focus, Box<dyn Fn(FocusEvent) + Send + Sync + 'static>>,
+    On<ev::blur, Box<dyn Fn(FocusEvent) + Send + Sync + 'static>>,
+);
+
+impl Debug for UseButtonReturn {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("UseButtonReturn")
+            .field("attrs", &"...")
+            .field("is_hovered", &self.is_hovered)
+            .field("is_pressed", &self.is_pressed)
+            .finish()
+    }
 }
 
-pub fn use_button<E: ElementDescriptor + 'static>(input: UseButtonInput<E>) -> UseButtonReturn {
-    let press = use_press(input.use_press_input);
+pub fn use_button<E: ElementType + 'static>(input: UseButtonInput<E>) -> UseButtonReturn {
+    let UseHoverReturn { attrs: (on_pointerenter, on_pointerleave), is_hovered } = use_hover(input.use_hover_input);
 
-    let focus = use_focus(input.use_focus_input.unwrap_or_else(|| {
-        UseFocusInput::builder()
-            .disabled(input.disabled.clone())
-            .build()
-    }));
+    let UsePressReturn { attrs: (on_keydown, on_click, on_pointerdown), is_pressed, } = use_press(input.use_press_input);
 
-    let hover = input.use_hover_input.map(use_hover);
+    let UseFocusReturn { attrs: (on_focus, on_blur) } = use_focus(input.use_focus_input);
 
-    let attrs = Attributes::new()
-        .insert("role", Attribute::String(Oco::Borrowed("button")))
-        .insert(
-            "tabindex",
-            input
-                .disabled
-                .map(|it| match it {
-                    true => Attribute::Option(None),
-                    false => Attribute::String(Oco::Borrowed("0")),
-                })
-                .into_attribute(),
-        )
-        .insert("disabled", input.disabled.into_attribute())
-        .insert(
-            "aria-disabled",
-            input
-                .disabled
-                .map(|it| match it {
-                    true => "true",
-                    false => "false",
-                })
-                .into_attribute(),
-        )
-        .insert("aria-haspopup", input.aria_haspopup.into_attribute())
-        // From https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-expanded
-        // A button that opens a widget should have aria-controls set to the id of the expandable widget and aria-expanded set to the current state of the widget.
-        .insert("aria-expanded", input.aria_expanded.into_attribute())
-        //props.insert(
-        //    "aria-controls",
-        //    initial_props.aria_controls.into_attribute(),
-        //);
-        //props.insert(
-        //    "aria-pressed",
-        //    initial_props.aria_pressed.into_attribute(),
-        //);
-        // Merge attributes
-        .merge(press.props.attrs)
-        .merge(focus.props.attrs);
+    // From https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-expanded
+    // A button that opens a widget should have aria-controls set to the id of the expandable widget and aria-expanded set to the current state of the widget.
+
+    //props.insert(
+    //    attr::AriaControls,
+    //    initial_props.aria_controls.into_attribute(),
+    //);
+    //props.insert(
+    //    attr::ArioPressed,
+    //    initial_props.aria_pressed.into_attribute(),
+    //);
 
     UseButtonReturn {
-        props: UseButtonProps {
-            attrs,
-            handlers: EventHandlers::builder()
-                .build()
-                .merge(press.props.handlers)
-                .merge(focus.props.handlers)
-                .merge_opt(hover.map(|it| it.props.handlers)),
-        },
-        press_responder: press.press_responder,
+        attrs: (
+            Attr(attr::Role, "button"),
+            Attr(attr::Tabindex, Signal::derive(move || match input
+                .disabled
+                .get() {
+                true => None,
+                false => Some("0"),
+            })),
+            Attr(attr::Disabled, Signal::derive(move || input.disabled.get().into_attribute_value())),
+            Attr(attr::AriaDisabled, Signal::derive(move || match input
+                .disabled
+                .get() {
+                true => "true",
+                false => "false",
+            })),
+            Attr(attr::AriaHaspopup, Signal::derive(move || input.aria_haspopup.get().into_attribute_value())),
+            Attr(attr::AriaExpanded, Signal::derive(move || input.aria_expanded.get().into_attribute_value())),
+            on_keydown,
+            on_click,
+            on_pointerdown,
+            on_pointerenter,
+            on_pointerleave,
+            on_focus,
+            on_blur,
+        ),
+        is_hovered,
+        is_pressed,
     }
 }

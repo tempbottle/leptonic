@@ -1,6 +1,6 @@
 use indoc::indoc;
 use leptonic::{atoms::link::AnchorLink, components::prelude::*, prelude::*};
-use leptos::*;
+use leptos::prelude::*;
 
 use crate::pages::documentation::{article::Article, toc::Toc};
 
@@ -8,34 +8,34 @@ use crate::pages::documentation::{article::Article, toc::Toc};
 #[allow(clippy::too_many_lines)]
 #[allow(clippy::similar_names)]
 pub fn PageSlider() -> impl IntoView {
-    let (value1, set_value1) = create_signal(6.0);
-    let (value2, set_value2) = create_signal(4.2);
-    let (value3, set_value3) = create_signal(-3.0);
-    let (value4, set_value4) = create_signal(0.5);
-    let (value5, set_value5) = create_signal(0.5);
-    let (range_a, set_range_a) = create_signal(0.5);
-    let (range_b, set_range_b) = create_signal(0.75);
-    let (range_a_step, set_range_a_step) = create_signal(2.0);
-    let (range_b_step, set_range_b_step) = create_signal(4.0);
+    let (value1, set_value1) = signal(6.0);
+    let (value2, set_value2) = signal(4.2);
+    let (value3, set_value3) = signal(-3.0);
+    let (value4, set_value4) = signal(0.5);
+    let (value5, set_value5) = signal(0.5);
+    let (range_a, set_range_a) = signal(0.5);
+    let (range_b, set_range_b) = signal(0.75);
+    let (range_a_step, set_range_a_step) = signal(2.0);
+    let (range_b_step, set_range_b_step) = signal(4.0);
 
     view! {
         <Article>
-            <H1 id="slider" class="anchor">
+            <h1 id="slider" class="anchor">
                 "Slider"
                 <AnchorLink href="#slider" description="Direct link to article header"/>
-            </H1>
+            </h1>
 
-            <P>"Allow users to adjust a value within a specified range by sliding a handle."</P>
+            <p>"Allow users to adjust a value within a specified range by sliding a handle."</p>
 
-            <P>
+            <p>
                 "All sliders require the "<Code inline=true>"min"</Code>", "<Code inline=true>"max"</Code>" and "<Code inline=true>"step"</Code>" properties, specifying the range of values the slider provides. "
                 "Using smaller step values results in ever so slightly smoother sliders until they can be considered \"continuous\". "
                 "You may exclude the "<Code inline=true>"step"</Code>" prop altogether to let the sliders use its full "<Code inline=true>"f64"</Code>" precision."
-            </P>
+            </p>
 
             <Code>
                 {indoc!(r#"
-                    let (value, set_value) = create_signal(6.0);
+                    let (value, set_value) = signal(6.0);
                     view! {
                         <Slider min=0.0 max=1.0 step=0.0001
                             value=value set_value=set_value
@@ -44,25 +44,25 @@ pub fn PageSlider() -> impl IntoView {
                 "#)}
             </Code>
 
-            <P>
+            <p>
                 "The slider always operates with "<Code inline=true>"f64"</Code>" values and may suffer from typical IEEE-math rounding problems. "
                 "We use the "<Code inline=true>"value_display"</Code>" property to specify how a selected value should be rendered."
-            </P>
+            </p>
 
             <Slider min=0.0 max=1.0 step=0.0001
                 value=value4 set_value=set_value4
                 value_display=move |v| format!("{v:.4}") />
 
-            <H1 id="example" class="anchor">
+            <h1 id="example" class="anchor">
                 "Example - Volume slider"
                 <AnchorLink href="#example" description="Direct link to section: Example"/>
-            </H1>
+            </h1>
 
-            <P>"Continuous sliders are perfect when the exact value selected is of no particular interest to your user. For example, when operating a volume slider."</P>
+            <p>"Continuous sliders are perfect when the exact value selected is of no particular interest to your user. For example, when operating a volume slider."</p>
 
             <Code>
                 {indoc!(r#"
-                    let (value, set_value) = create_signal(0.5);
+                    let (value, set_value) = signal(0.5);
                     view! {
                         <Stack orientation=StackOrientation::Horizontal spacing=Size::Zero>
                             <Icon icon=icondata::BsVolumeDownFill style="font-size: 2.5em;"/>
@@ -77,25 +77,25 @@ pub fn PageSlider() -> impl IntoView {
             </Code>
 
             <Stack orientation=StackOrientation::Horizontal spacing=Size::Zero>
-                <Icon icon=icondata::BsVolumeDownFill style="font-size: 2.5em;"/>
-                <Slider min=0.0 max=1.0 value=value5 set_value=set_value5 style="width: 10em"
+                <Icon icon=icondata::BsVolumeDownFill attr:style="font-size: 2.5em;"/>
+                <Slider min=0.0 max=1.0 value=value5 set_value=set_value5 attr:style="width: 10em"
                     value_display=move |v| format!("{:.0}%", v * 100.0)/>
-                <Icon icon=icondata::BsVolumeUpFill style="font-size: 2.5em; margin-left: 0.25em;"/>
+                <Icon icon=icondata::BsVolumeUpFill attr:style="font-size: 2.5em; margin-left: 0.25em;"/>
             </Stack>
 
-            <H2 id="marks" class="anchor">
+            <h2 id="marks" class="anchor">
                 "Marks"
                 <AnchorLink href="#marks" description="Direct link to section: Marks"/>
-            </H2>
+            </h2>
 
-            <P>
+            <p>
                 "Small step values result in lesser selectable values, as only values starting from min and increased by multiples of step are selectable. "
                 "To help visualize the selectable values of the slider, marks can be automatically generated."
-            </P>
+            </p>
 
             <Code>
                 {indoc!(r#"
-                    let (value, set_value) = create_signal(6.0);
+                    let (value, set_value) = signal(6.0);
                     view! {
                         <Slider min=1.0 max=10.0 step=1.0
                             value=value set_value=set_value
@@ -110,19 +110,19 @@ pub fn PageSlider() -> impl IntoView {
                 marks=SliderMarks::Automatic { create_names: false }
                 value_display=move |v| format!("{v:.0}")/>
 
-            <P>
+            <p>
                 "Note that marks are only helpful when dealing with sliders having a limited number of selectable values, meaning ones with small ranges and a high stepping value. "
                 "Automatic mark generation is currently limited to creating 20 evenly spaced marks so that continuous sliders will not create thousands of them."
-            </P>
+            </p>
 
-            <P>
+            <p>
                 "You can also specify custom marks! Custom marks will be validated. "
                 "If the specified value is outside the sliders [min..max] range or the percentage is outside the [0..1] range, the mark will be excluded and a warning will be logged to the console."
-            </P>
+            </p>
 
             <Code>
                 {indoc!(r#"
-                    let (value, set_value) = create_signal(6.0);
+                    let (value, set_value) = signal(6.0);
                     view! {
                         <Slider min=1.0 max=10.0 step=1.0
                             value=value set_value=set_value
@@ -171,38 +171,38 @@ pub fn PageSlider() -> impl IntoView {
                 }
                 value_display=move |v| format!("{v:.0}")/>
 
-            <H2 id="arbitrary-ranges" class="anchor">
+            <h2 id="arbitrary-ranges" class="anchor">
                 "Arbitrary ranges"
                 <AnchorLink href="#arbitrary-ranges" description="Direct link to section: Arbitrary ranges"/>
-            </H2>
+            </h2>
 
-            <P>"Sliders can use any combination of min, max and step values."</P>
+            <p>"Sliders can use any combination of min, max and step values."</p>
 
             <Slider value=value2 set_value=set_value2 min=2.0 max=8.0 step=0.4
                 marks=SliderMarks::Automatic { create_names: false }
                 value_display=move |v| format!("{v:.1}")/>
 
-            <P>"You can also use a positive value for the "<Code inline=true>"min"</Code>" prop, and a negative value for the "<Code inline=true>"max"</Code>" prop, resulting in a reversed axis."</P>
+            <p>"You can also use a positive value for the "<Code inline=true>"min"</Code>" prop, and a negative value for the "<Code inline=true>"max"</Code>" prop, resulting in a reversed axis."</p>
 
             <Slider value=value3 set_value=set_value3 min=9.0 max=-9.0 step=1.0
                 marks=SliderMarks::Automatic { create_names: false }
                 value_display=move |v| format!("{v:.0}")/>
 
-            <H2 id="range-sliders" class="anchor">
+            <h2 id="range-sliders" class="anchor">
                 "Range sliders"
                 <AnchorLink href="#range-sliders" description="Direct link to section: Range sliders"/>
-            </H2>
+            </h2>
 
-            <P>
+            <p>
                 "A range of values can be selected using the "<Code inline=true>"RangeSlider"</Code>" component. "
                 "The component requires two values and in return provides a slider with two control knobs, allowing you to select a range of values. "
                 "One knob can be dragged over the other, letting them switch places."
-            </P>
+            </p>
 
             <Code>
                 {indoc!(r#"
-                    let (value_a, set_value_a) = create_signal(0.5);
-                    let (value_b, set_value_b) = create_signal(0.75);
+                    let (value_a, set_value_a) = signal(0.5);
+                    let (value_b, set_value_b) = signal(0.75);
                     view! {
                         <RangeSlider
                             value_a=range_a
@@ -229,7 +229,7 @@ pub fn PageSlider() -> impl IntoView {
                 value_display=move |v| format!("{v:.4}")
             />
 
-            <P>"Range sliders can also use marks, just like the normal slider."</P>
+            <p>"Range sliders can also use marks, just like the normal slider."</p>
 
             <RangeSlider
                 value_a=range_a_step
@@ -243,22 +243,22 @@ pub fn PageSlider() -> impl IntoView {
                 value_display=move |v| format!("{v:.0}")
             />
 
-            <H2 id="keyboard-input" class="anchor">
+            <h2 id="keyboard-input" class="anchor">
                 "Keyboard input"
                 <AnchorLink href="#keyboard-input" description="Direct link to section: Keyboard input"/>
-            </H2>
+            </h2>
 
-            <P>
+            <p>
                 "Slider knobs are keyboard-interactable and can be cycled through using the "<Code inline=true>"Tab"</Code>" key. "
                 "Manipulation of slider knobs using the error keys will come in a future update."
-            </P>
+            </p>
 
-            <H2 id="styling" class="anchor">
+            <h2 id="styling" class="anchor">
                 "Styling"
                 <AnchorLink href="#styling" description="Direct link to section: Styling"/>
-            </H2>
+            </h2>
 
-            <P>"You may overwrite any of the following CSS variables to meet your styling needs."</P>
+            <p>"You may overwrite any of the following CSS variables to meet your styling needs."</p>
 
             <Code>
                 {indoc!(r"

@@ -1,115 +1,14 @@
 use std::fmt::Display;
 
-use leptos::*;
+use leptos::prelude::*;
+use leptos_use::core::IntoElementMaybeSignal;
 use leptos_use::{use_window, UseElementBoundingReturn};
-use prelude::Consumer;
 
 pub mod atoms;
 pub mod components;
 pub mod contexts;
 pub mod hooks;
-pub mod state;
 pub mod utils;
-
-#[derive(Debug, Clone)]
-pub struct OptMaybeSignal<T: 'static>(pub(crate) Option<MaybeSignal<T>>);
-
-impl<T: Clone> OptMaybeSignal<T> {
-    pub fn or<D: Into<MaybeSignal<T>>>(self, default: D) -> MaybeSignal<T> {
-        match self.0 {
-            Some(maybe_signal) => maybe_signal,
-            None => default.into(),
-        }
-    }
-
-    pub fn or_default(self) -> MaybeSignal<T>
-    where
-        T: Default,
-    {
-        match self.0 {
-            Some(maybe_signal) => maybe_signal,
-            None => MaybeSignal::Static(T::default()),
-        }
-    }
-
-    pub fn map<U: 'static, F: Fn(T) -> U + 'static>(self, map: F) -> OptMaybeSignal<U> {
-        match self.0 {
-            Some(maybe_signal) => match maybe_signal {
-                MaybeSignal::Static(v) => MaybeSignal::Static(map(v)).into(),
-                MaybeSignal::Dynamic(sig) => {
-                    MaybeSignal::Dynamic(Signal::derive(move || map(sig.get()))).into()
-                }
-            },
-            None => OptMaybeSignal(None),
-        }
-    }
-}
-
-impl<T: Copy> Copy for OptMaybeSignal<T> {}
-
-impl<T> Default for OptMaybeSignal<T> {
-    fn default() -> Self {
-        Self(None)
-    }
-}
-
-impl<T: 'static, I: Into<MaybeSignal<T>>> From<I> for OptMaybeSignal<T> {
-    fn from(value: I) -> Self {
-        Self(Some(value.into()))
-    }
-}
-
-impl<T: Clone + Default> SignalGet for OptMaybeSignal<T> {
-    type Value = T;
-
-    fn get(&self) -> T {
-        match &self.0 {
-            Some(signal) => signal.get(),
-            None => T::default(),
-        }
-    }
-
-    fn try_get(&self) -> Option<T> {
-        match &self.0 {
-            Some(signal) => signal.try_get(),
-            None => Some(T::default()),
-        }
-    }
-}
-
-impl<T: Clone + Default> SignalGetUntracked for OptMaybeSignal<T> {
-    type Value = T;
-
-    fn get_untracked(&self) -> T {
-        match &self.0 {
-            Some(signal) => signal.get_untracked(),
-            None => T::default(),
-        }
-    }
-
-    fn try_get_untracked(&self) -> Option<T> {
-        match &self.0 {
-            Some(signal) => signal.try_get_untracked(),
-            None => Some(T::default()),
-        }
-    }
-}
-
-impl<T: IntoAttribute + Clone> IntoAttribute for OptMaybeSignal<T> {
-    fn into_attribute(self) -> Attribute {
-        match self.0 {
-            Some(t) => t.into_attribute(), // Requires T to be Clone!
-            None => Attribute::Option(None),
-        }
-    }
-
-    fn into_attribute_boxed(self: Box<Self>) -> Attribute {
-        match self.0 {
-            Some(t) => t.into_attribute(), // Requires T to be Clone!
-            None => Attribute::Option(None),
-        }
-    }
-}
 
 // Let's make some types of our public API more easily accessible.
 pub use crate::utils::scroll_behavior::ScrollBehavior;
@@ -123,17 +22,12 @@ pub mod prelude {
 
     pub use super::utils::aria::AriaExpanded;
     pub use super::utils::aria::AriaHasPopup;
-    pub use super::utils::callback::consumer;
-    pub use super::utils::callback::producer;
-    pub use super::utils::callback::Consumer;
-    pub use super::utils::callback::Producer;
     pub use super::utils::callback::ViewCallback;
     pub use super::utils::callback::ViewProducer;
     pub use super::FontWeight;
     pub use super::Height;
     pub use super::Margin;
     pub use super::Mount;
-    pub use super::OptMaybeSignal;
     pub use super::OptionDeref;
     pub use super::Out;
     pub use super::Size;
@@ -143,7 +37,7 @@ pub mod prelude {
     //pub use crate::hooks::prelude::*;
     pub use crate::contexts::global_click_event::GlobalClickEvent;
     pub use crate::contexts::global_keyboard_event::GlobalKeyboardEvent;
-    pub use crate::create_signal_ls;
+    pub use crate::signal_ls;
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -151,65 +45,96 @@ pub enum Language {
     En,
 }
 
+/// The `Out` type represents any outgoing / emittable value. Use it in components that should
+/// return (propagate) a value upwards using a function-like property.
+/// Out can be anything that can be written to:
+/// - a `WriteSignal`,
+/// - a combined `RwSignal` or
+/// - a `Callback` which only consumes an input and returns `()`.
+/// This helps you to define props where the user can choose to use a signal directly
+/// or use a closure (which will be converted to a Callback).
 #[derive(Debug)]
-pub enum Out<O: 'static> {
-    Consumer(Consumer<O>),
+pub enum Out<O: 'static, S = SyncStorage> {
+    Fn(fn(O) -> ()),
     Callback(Callback<O, ()>),
-    WriteSignal(WriteSignal<O>),
-    RwSignal(RwSignal<O>),
+    WriteSignal(WriteSignal<O, S>),
+    RwSignal(RwSignal<O, S>),
 }
 
-impl<O: 'static> Copy for Out<O> {}
+impl<O: 'static, S> Copy for Out<O, S> {}
 
-impl<O: 'static> Clone for Out<O> {
+impl<O: 'static, S> Clone for Out<O, S> {
     fn clone(&self) -> Self {
         *self
     }
 }
 
-impl<O: 'static> Out<O> {
-    pub fn new_func(fun: impl Fn(O) + 'static) -> Self {
-        Self::Consumer(fun.into())
+impl<O: 'static, S> Default for Out<O, S> {
+    fn default() -> Self {
+        Self::new_fn(|_| {
+            // intentional noop
+        })
+    }
+}
+
+impl<O: 'static, S> Out<O, S> {
+    /// Creates a new `Out` from the given function pointer.
+    pub fn new_fn(f: fn(O) -> ()) -> Self {
+        Self::Fn(f)
     }
 
+    /// Creates a new `Out` from the given function.
+    pub fn new_callback(f: impl Fn(O) + Send + Sync + 'static) -> Self {
+        Self::Callback(Callback::new(f))
+    }
+}
+
+impl<O: 'static> Out<O, LocalStorage> {
     pub fn set(&self, new_value: O) {
         match self {
-            Self::Consumer(consumer) => consumer.consume(new_value),
-            Self::Callback(callback) => Callable::call(callback, new_value),
+            Self::Fn(f) => f(new_value),
+            Self::Callback(callback) => Callable::run(callback, new_value),
             Self::WriteSignal(write_signal) => write_signal.set(new_value),
             Self::RwSignal(rw_signal) => rw_signal.set(new_value),
         }
     }
 }
 
-impl<T: 'static, F: Fn(T) + 'static> From<F> for Out<T> {
+impl<O: Send + Sync + 'static> Out<O, SyncStorage> {
+    pub fn set(&self, new_value: O) {
+        match self {
+            Self::Fn(f) => f(new_value),
+            Self::Callback(callback) => Callable::run(callback, new_value),
+            Self::WriteSignal(write_signal) => write_signal.set(new_value),
+            Self::RwSignal(rw_signal) => rw_signal.set(new_value),
+        }
+    }
+}
+
+impl<T, F, S> From<F> for Out<T, S>
+where
+    T: 'static,
+    F: Fn(T) + Send + Sync + 'static
+{
     fn from(fun: F) -> Self {
-        Self::new_func(fun)
+        Self::new_callback(fun)
     }
 }
 
-impl<O: 'static> From<Consumer<O>> for Out<O> {
-    fn from(consumer: Consumer<O>) -> Self {
-        Self::Consumer(consumer)
-    }
-}
-
-#[cfg(not(feature = "nightly"))]
-impl<O: 'static> From<Callback<O, ()>> for Out<O> {
+impl<O: 'static> From<Callback<O, ()>> for Out<O, SyncStorage> {
     fn from(callback: Callback<O, ()>) -> Self {
         Self::Callback(callback)
     }
 }
 
-#[cfg(not(feature = "nightly"))]
-impl<O: 'static> From<WriteSignal<O>> for Out<O> {
-    fn from(write_signal: WriteSignal<O>) -> Self {
+impl<O: 'static, S> From<WriteSignal<O, S>> for Out<O, S> {
+    fn from(write_signal: WriteSignal<O, S>) -> Self {
         Self::WriteSignal(write_signal)
     }
 }
 
-impl<O: 'static> From<RwSignal<O>> for Out<O> {
-    fn from(rw_signal: RwSignal<O>) -> Self {
+impl<O: 'static, S> From<RwSignal<O, S>> for Out<O, S> {
+    fn from(rw_signal: RwSignal<O, S>) -> Self {
         Self::RwSignal(rw_signal)
     }
 }
@@ -219,17 +144,21 @@ pub enum Mount {
     /// Mount the child view once. Then keep it mounted as long as the parent lives.
     #[default]
     Once,
+
     /// Mount the child view once. May defer mounting to the point where the view is first needed. Then keep it mounted as long as the parent lives.
     // OnceShown, // TODO: Implement this variant in tabs.
     /// Always re-mount the child view when it is needed.
     WhenShown,
 }
 
-pub fn create_signal_ls<T: Clone + serde::Serialize + serde::de::DeserializeOwned>(
+/// Create a read-write signal pair that automatically syncs the stored value in the browsers
+/// LocalStorage. When called, the value is read back from storage.
+/// When the value is not found, `initial` is set.
+pub fn signal_ls<T: Send + Sync + Clone + serde::Serialize + serde::de::DeserializeOwned +  'static>(
     key: &'static str,
     initial: T,
 ) -> (ReadSignal<T>, WriteSignal<T>) {
-    let (signal, set_signal) = create_signal(read_from_local_storage::<T>(key).unwrap_or(initial));
+    let (signal, set_signal) = signal(read_from_local_storage::<T>(key).unwrap_or(initial));
 
     track_in_local_storage(key, signal);
 
@@ -254,15 +183,16 @@ pub fn read_from_local_storage<T: serde::de::DeserializeOwned>(key: &'static str
     })
 }
 
-pub fn track_in_local_storage<T: serde::Serialize + Clone>(
+pub fn track_in_local_storage<T: Send + Sync + serde::Serialize + Clone + 'static>(
     key: &'static str,
     signal: ReadSignal<T>,
 ) {
-    create_effect(move |_old| {
+    Effect::new(move |_old| {
         if let Some(window) = &*use_window() {
             let storage = window.local_storage().ok()??;
+            let val = signal.get(); // TODO (new): Can we use read() instead?
             storage
-                .set(key, serde_json::to_string(&signal.get()).ok()?.as_ref())
+                .set(key, serde_json::to_string(&val).ok()?.as_ref())
                 .ok()
         } else {
             Some(())
@@ -384,9 +314,9 @@ impl Display for Margin {
 
 /// Keep track of an elements position and size.
 /// Call `track_client_rect` to update the signal state.
-#[derive(Debug, Clone)]
-struct TrackedElementClientBoundingRect<T: Into<web_sys::Element> + Clone + 'static> {
-    el: StoredValue<leptos_use::core::ElementMaybeSignal<T, web_sys::Element>>,
+#[derive(Debug, Clone, Copy)]
+struct TrackedElementClientBoundingRect {
+    el: StoredValue<leptos_use::core::ElementMaybeSignal<web_sys::Element>>,
     /// Distance of the tracked element to the left of the viewport.
     pub(crate) left: ReadSignal<f64>,
     /// Distance of the tracked element to the top of the viewport.
@@ -401,23 +331,18 @@ struct TrackedElementClientBoundingRect<T: Into<web_sys::Element> + Clone + 'sta
     set_height: WriteSignal<f64>,
 }
 
-impl<T: Into<web_sys::Element> + Clone + 'static> Copy for TrackedElementClientBoundingRect<T> {}
-
-impl<T> TrackedElementClientBoundingRect<T>
-where
-    T: Into<web_sys::Element> + Clone + 'static,
-{
-    pub(crate) fn new<El>(el: El) -> Self
+impl TrackedElementClientBoundingRect {
+    pub(crate) fn new<El, M>(el: El) -> Self
     where
-        El: Clone + Into<leptos_use::core::ElementMaybeSignal<T, web_sys::Element>>,
+        El: IntoElementMaybeSignal<web_sys::Element, M>,
     {
-        let (left, set_left) = create_signal(0.0);
-        let (top, set_top) = create_signal(0.0);
-        let (width, set_width) = create_signal(0.0);
-        let (height, set_height) = create_signal(0.0);
+        let (left, set_left) = signal(0.0);
+        let (top, set_top) = signal(0.0);
+        let (width, set_width) = signal(0.0);
+        let (height, set_height) = signal(0.0);
 
         Self {
-            el: store_value(el.into()),
+            el: StoredValue::new(el.into_element_maybe_signal()),
             left,
             set_left,
             top,
@@ -448,18 +373,15 @@ struct RelativeMousePosition {
 }
 
 impl RelativeMousePosition {
-    pub(crate) fn new<T>(client_bounding_rect: TrackedElementClientBoundingRect<T>) -> Self
-    where
-        T: Into<web_sys::Element> + Clone + 'static,
-    {
+    pub(crate) fn new(client_bounding_rect: TrackedElementClientBoundingRect) -> Self {
         let leptos_use::UseMouseReturn {
             x: cursor_x,
             y: cursor_y,
             ..
         } = leptos_use::use_mouse();
 
-        let (x, set_x) = create_signal(0.0);
-        let (y, set_y) = create_signal(0.0);
+        let (x, set_x) = signal(0.0);
+        let (y, set_y) = signal(0.0);
 
         let _ = leptos_use::watch_throttled_with_options(
             move || (cursor_x.get(), cursor_y.get()),
@@ -474,7 +396,7 @@ impl RelativeMousePosition {
         );
 
         Self {
-            rel_mouse_pos: create_memo(move |_| {
+            rel_mouse_pos: Memo::new(move |_| {
                 let x = x.get() - client_bounding_rect.left.get();
                 let y = y.get() - client_bounding_rect.top.get();
                 let px = (x / client_bounding_rect.width.get()).clamp(0.0, 1.0);
@@ -498,7 +420,7 @@ pub struct UseElementBoundingReturnReadOnly {
     pub y: Signal<f64>,
 }
 
-impl<F: Fn() + Clone> From<UseElementBoundingReturn<F>> for UseElementBoundingReturnReadOnly {
+impl<F: Fn() + Send + Sync + Clone> From<UseElementBoundingReturn<F>> for UseElementBoundingReturnReadOnly {
     fn from(value: UseElementBoundingReturn<F>) -> Self {
         UseElementBoundingReturnReadOnly {
             height: value.height,
@@ -511,12 +433,4 @@ impl<F: Fn() + Clone> From<UseElementBoundingReturn<F>> for UseElementBoundingRe
             y: value.y,
         }
     }
-}
-
-/// In rare cases, compile errors arise when using Leptos's `view!` macro,
-/// where wrapping the failing code in this component fixes the errors...
-/// This component simply renders the provided children without adding any additional markup.
-#[component(transparent)]
-pub(crate) fn Transparent(children: Children) -> impl IntoView {
-    children()
 }
