@@ -7,7 +7,7 @@ pub mod locale;
 pub mod math;
 pub mod pointer_type;
 pub mod scroll_behavior;
-pub mod signals;
+//pub mod signals;
 pub(crate) mod text_selection;
 pub mod time;
 

@@ -1669,7 +1669,6 @@ dependencies = [
  "leptos-tiptap-build",
  "leptos-use",
  "leptos_meta",
- "leptos_reactive",
  "leptos_router",
  "send_wrapper",
  "serde",
@@ -1710,7 +1709,7 @@ dependencies = [
  "leptos_hot_reload",
  "leptos_macro",
  "leptos_server",
- "oco_ref 0.2.0",
+ "oco_ref",
  "or_poisoned",
  "paste",
  "rand",
@@ -1920,30 +1919,6 @@ dependencies = [
  "send_wrapper",
  "wasm-bindgen",
  "web-sys",
-]
-
-[[package]]
-name = "leptos_reactive"
-version = "0.6.15"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e4161acbf80f59219d8d14182371f57302bc7ff81ee41aba8ba1ff7295727f23"
-dependencies = [
- "base64",
- "cfg-if",
- "futures",
- "indexmap",
- "oco_ref 0.1.1",
- "paste",
- "pin-project",
- "rustc-hash 1.1.0",
- "self_cell",
- "serde",
- "serde-wasm-bindgen",
- "serde_json",
- "slotmap",
- "thiserror 1.0.69",
- "tracing",
- "wasm-bindgen-futures",
 ]
 
 [[package]]
@@ -2269,16 +2244,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "62948e14d923ea95ea2c7c86c71013138b66525b86bdc08d2dcc262bdb497b87"
 dependencies = [
  "memchr",
-]
-
-[[package]]
-name = "oco_ref"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c51ebcefb2f0b9a5e0bea115532c8ae4215d1b01eff176d0f4ba4192895c2708"
-dependencies = [
- "serde",
- "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -2783,12 +2748,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
 
 [[package]]
-name = "self_cell"
-version = "1.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c2fdfc24bc566f839a2da4c4295b82db7d25a24253867d5c64355abb5799bdbe"
-
-[[package]]
 name = "send_wrapper"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2981,7 +2940,6 @@ version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dbff4acf519f630b3a3ddcfaea6c06b42174d9a44bc70c620e9ed1649d58b82a"
 dependencies = [
- "serde",
  "version_check",
 ]
 
@@ -3106,7 +3064,7 @@ dependencies = [
  "js-sys",
  "linear-map",
  "next_tuple",
- "oco_ref 0.2.0",
+ "oco_ref",
  "once_cell",
  "or_poisoned",
  "parking_lot",

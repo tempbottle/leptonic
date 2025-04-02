@@ -1,5 +1,5 @@
 use leptos::oco::Oco;
-use leptos_reactive::{Callback, MaybeSignal};
+use leptos::prelude::{Callback, MaybeSignal};
 
 pub struct LongPressEvent {}
 
