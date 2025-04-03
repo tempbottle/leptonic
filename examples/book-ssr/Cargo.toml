@@ -22,7 +22,7 @@ indoc = "2.0"
 #leptonic = { git = "https://github.com/lpotthast/leptonic", branch = "main", features = ["clipboard", "tiptap"] }
 leptonic = { path = "../../leptonic", features = ["full"] }
 leptos = { version = "0.7", features = [] }
-leptos-use = "0.15.0"
+leptos-use = "0.15"
 leptos_axum = { version = "0.7", optional = true }
 leptos_meta = { version = "0.7", features = [] }
 leptos_router = { version = "0.7", features = [] }
