@@ -3,6 +3,7 @@
 rustflags = ["--cfg=web_sys_unstable_apis"]
 
 # https://github.com/rust-lang/rust/issues/130729#issuecomment-2645935599 lld linker say some error.
+# https://github.com/feral-dot-io/leptos-chartistry/pull/48/files fixed by .into_any and not use Either::xx.
 [target.aarch64-apple-darwin]
 rustflags = ["-C", "link-arg=-fuse-ld=/opt/homebrew/opt/llvm/bin/ld64.lld"]
 
